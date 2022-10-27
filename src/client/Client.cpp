@@ -29,9 +29,17 @@ namespace twClient {
         std::cout << "Client setup successful!\n";
     }
 
+    Client::~Client() {
+        try {
+            abort();
+        }
+        catch(const std::exception& e) {
+            std::cerr << e.what() << '\n';
+        }        
+    }
+
     void Client::start() {
         
-
         if(connect(m_socket, (struct sockaddr*) &m_address, sizeof(m_address)) == -1) {
             throw std::runtime_error("Connection failed - no server available!");
         }
@@ -40,6 +48,7 @@ namespace twClient {
 
         //todo: welcome message
 
+        run();
     }
 
     void Client::run() {
@@ -64,6 +73,7 @@ namespace twClient {
             }
         
         } while (!isQuit);
+
     }
 
     bool Client::sendMessage(const char *buffer, int size){
@@ -94,11 +104,11 @@ namespace twClient {
 
         if(m_socket != -1) {
             if(shutdown(m_socket, SHUT_RDWR) == -1) {
-                throw std::runtime_error("Shutting down socket failed.");
+                throw std::runtime_error("Nothing to shutdown...");
             }
 
             if(close(m_socket) == -1) {
-                throw std::runtime_error("Closing socket failed.");
+                throw std::runtime_error("Nothing to close...");
             }
             m_socket = -1;
         }

@@ -17,6 +17,7 @@ namespace twClient {
     class Client {
     public:
         Client(std::string ip, int port);
+        ~Client();
 
         std::string getCmd();
 

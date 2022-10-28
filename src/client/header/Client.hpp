@@ -11,12 +11,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "../../share/ClientBase.h"
+
 #define BUF 4096
 
 namespace twClient {
-    class Client {
+    class Client : ClientBase {
     public:
-        Client(std::string ip, int port);
+        Client(const std::string& ip, int port);
         ~Client();
 
         std::string getCmd();
@@ -31,14 +33,14 @@ namespace twClient {
         void run();
         void abort();
 
-        bool sendMessage(const char *buffer, int size);
+        bool sendMessage(const char *buffer);
         void receiveMessage();
 
     private:
-        struct sockaddr_in m_address;
+        struct sockaddr_in m_address{};
         int m_port;
         int m_socket;
-        char m_recvBuffer[BUF];
+        char m_recvBuffer[BUF]{};
 
     };
 }

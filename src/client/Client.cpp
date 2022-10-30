@@ -62,10 +62,11 @@ namespace twClient {
 
         do {
             std::cout << ">> ";
-            std::cin >> message;
+            std::getline(std::cin, message);
 
             if (!message.empty() && message != "\n") {
                 isQuit = (message == CMD_QUIT);
+                std::cout << "Message: " << message << std::endl;
 
                 if (!sendMessage(message.c_str())) {
                     throw std::runtime_error("Send failed, abort...");

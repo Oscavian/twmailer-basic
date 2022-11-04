@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <string>
 #include <iostream>
+#include <sstream>
 
 namespace twClient {
     Client::Client(const std::string &ip, int port) {
@@ -66,13 +67,17 @@ namespace twClient {
 
             if (!message.empty() && message != "\n") {
                 isQuit = (message == CMD_QUIT);
-                std::cout << "Message: " << message << std::endl;
-
+                //Nachricht an Server muss mit einem der Keywords starten, da für parsing benötigt
+                //SEND somemessage
+                //LIST user
+                //READ user msg
+                //DEL user msg
+                //QUIT
+                
                 if (!sendMessage(message.c_str())) {
                     throw std::runtime_error("Send failed, abort...");
-                }
-
-                std::cout << "Message sent!\n";
+                }   
+                std::cout << "Message sent! Message:" << message << "\n"; 
 
                 receiveMessage();
             }

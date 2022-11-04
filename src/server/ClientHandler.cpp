@@ -1,5 +1,6 @@
 #include "header/ClientHandler.hpp"
 #include "../share/protocol.h"
+#include <sstream>
 
 namespace twServer {
     ClientHandler::ClientHandler(std::string ipAddr, int *socket){
@@ -47,7 +48,70 @@ namespace twServer {
 
             //null terminate message & print to stdout
             m_receiveBuffer[size] = '\0';
-            std::cout << "Message received: " << m_receiveBuffer << "\n";
+            std::cout << "Input received: " << m_receiveBuffer << "\n";
+            std::string message = m_receiveBuffer;
+
+            //here parsing client input
+              if(message.find(CMD_SEND)!=std::string::npos){
+                    std::string command = CMD_SEND;
+                    int start_pos = message.find(command);
+                    //+1 to remove whitespace
+                    int end_pos = command.size() + 1;
+                    message.erase(start_pos, end_pos);
+                    
+                    std::cout << "Message received: " << message << "\n\n";
+                    //save msg in doc
+
+                }else if(message.find(CMD_LIST)!=std::string::npos){
+                    std::string command = CMD_LIST;
+                    int start_pos = message.find(command);
+                    //+1 to remove whitespace
+                    int end_pos = command.size() + 1;
+                    std::string user = message.erase(start_pos, end_pos);
+
+                    std::cout << "list msgs of " << user << "\n\n";
+                    //get list of all msg of user
+
+                }else if(message.find(CMD_READ)!=std::string::npos){
+                    std::string command = CMD_READ;
+                    int start_pos = message.find(command);
+                    //+1 to remove whitespace
+                    int end_pos = command.size() + 1;
+                    message.erase(start_pos, end_pos);
+                    std::string msg;
+                    std::string user;
+                    std::istringstream ss(message);
+
+                    int i = 0;
+                    while(getline(ss, msg, ' ')) {
+                        if(i==0){
+                            user = msg;
+                        }
+                        i++;
+                    }
+                    std::cout << "read " << msg << " of " << user << "\n\n";
+                    //read specific msg of user
+
+                }else if(message.find(CMD_DEL)!=std::string::npos){
+                    std::string command = CMD_DEL;
+                    int start_pos = message.find(command);
+                    //+1 to remove whitespace
+                    int end_pos = command.size() + 1;
+                    message.erase(start_pos, end_pos);
+                    std::string msg;
+                    std::string user;
+                    std::istringstream ss(message);
+
+                    int i = 0;
+                    while(getline(ss, msg, ' ')) {
+                        if(i==0){
+                            user = msg;
+                        }
+                        i++;
+                    }
+                    std::cout << "delete " << msg << " of " << user << "\n\n";
+                    //delete specific msg of user
+                }
 
             //send confirmation msg
             if(!sendMessage(SERV_OK)) {

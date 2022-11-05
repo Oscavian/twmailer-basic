@@ -75,7 +75,7 @@ namespace twServer {
                     ntohs(cliaddress.sin_port));
 
             //connection established, start communicating...
-            ClientHandler client(std::string(inet_ntoa(cliaddress.sin_addr)), new int(clientSocket));
+            ClientHandler client(std::string(inet_ntoa(cliaddress.sin_addr)), new int(clientSocket), m_mailDir);
             
             client.run();
 

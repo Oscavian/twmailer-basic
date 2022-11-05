@@ -21,13 +21,16 @@ namespace twServer {
 
     class ClientHandler : ClientBase {
         public:
-            ClientHandler(std::string ipAddr, int *socket);
+            ClientHandler(std::string ipAddr, int *socket, std::string mailDir);
             ~ClientHandler();
 
             void start();
             void run();
             bool sendMessage(const char* buffer);
             void receiveMessage();
+            std::string removeCommand(std::string message, std::string command);
+            void makeDirSaveMessage(std::string user, std::string path, std::string message);
+            std::string getNextID(std::string user, std::string path);
             void abort();
 
         private:
@@ -35,6 +38,7 @@ namespace twServer {
             bool m_abortRequested;
             std::string m_ipAddr;
             char m_receiveBuffer[BUF];
+            std::string m_mailDir;
         
 
     };

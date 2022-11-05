@@ -68,10 +68,10 @@ namespace twClient {
             if (!message.empty() && message != "\n") {
                 isQuit = (message == CMD_QUIT);
                 //Nachricht an Server muss mit einem der Keywords starten, da für parsing benötigt
-                //SEND somemessage
+                //SEND user somemessage
                 //LIST user
-                //READ user msg
-                //DEL user msg
+                //READ user msgID
+                //DEL user msgID
                 //QUIT
                 
                 if (!sendMessage(message.c_str())) {

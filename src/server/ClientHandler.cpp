@@ -1,11 +1,16 @@
 #include "header/ClientHandler.hpp"
 #include "../share/protocol.h"
 #include <sstream>
+#include <filesystem>
+#include <fstream>
+#include <vector>
+#include <bits/stdc++.h>
 
 namespace twServer {
-    ClientHandler::ClientHandler(std::string ipAddr, int *socket){
+    ClientHandler::ClientHandler(std::string ipAddr, int *socket, std::string mailDir){
         m_ipAddr = ipAddr;
         m_socket = socket;
+        m_mailDir = mailDir;
     }   
 
     ClientHandler::~ClientHandler() {
@@ -52,70 +57,100 @@ namespace twServer {
             std::string message = m_receiveBuffer;
 
             //here parsing client input
-              if(message.find(CMD_SEND)!=std::string::npos){
-                    std::string command = CMD_SEND;
-                    int start_pos = message.find(command);
-                    //+1 to remove whitespace
-                    int end_pos = command.size() + 1;
-                    message.erase(start_pos, end_pos);
-                    
-                    std::cout << "Message received: " << message << "\n\n";
-                    //save msg in doc
-
-                }else if(message.find(CMD_LIST)!=std::string::npos){
-                    std::string command = CMD_LIST;
-                    int start_pos = message.find(command);
-                    //+1 to remove whitespace
-                    int end_pos = command.size() + 1;
-                    std::string user = message.erase(start_pos, end_pos);
-
-                    std::cout << "list msgs of " << user << "\n\n";
-                    //get list of all msg of user
-
-                }else if(message.find(CMD_READ)!=std::string::npos){
-                    std::string command = CMD_READ;
-                    int start_pos = message.find(command);
-                    //+1 to remove whitespace
-                    int end_pos = command.size() + 1;
-                    message.erase(start_pos, end_pos);
-                    std::string msg;
-                    std::string user;
-                    std::istringstream ss(message);
-
-                    int i = 0;
-                    while(getline(ss, msg, ' ')) {
-                        if(i==0){
-                            user = msg;
-                        }
-                        i++;
+            if(message.find(CMD_SEND)!=std::string::npos){
+                message = removeCommand(message, CMD_SEND);
+                //only command sent
+                if(message.size() == 0){
+                    if(!sendMessage("No user or message specified. Usage: SEND username message")) {
+                        throw std::runtime_error("Sending answer failed.");
                     }
-                    std::cout << "read " << msg << " of " << user << "\n\n";
-                    //read specific msg of user
+                    continue;
+                }
+                std::string user;
+                std::istringstream ss(message);
 
-                }else if(message.find(CMD_DEL)!=std::string::npos){
-                    std::string command = CMD_DEL;
-                    int start_pos = message.find(command);
-                    //+1 to remove whitespace
-                    int end_pos = command.size() + 1;
-                    message.erase(start_pos, end_pos);
-                    std::string msg;
-                    std::string user;
-                    std::istringstream ss(message);
+                getline(ss, user, ' ');
+                //erase username from message
+                int start_pos = message.find(user);
+                int end_pos = user.size() + 1;
+                message.erase(start_pos, end_pos);
 
-                    int i = 0;
-                    while(getline(ss, msg, ' ')) {
-                        if(i==0){
-                            user = msg;
-                        }
-                        i++;
+                if(message.size() == 0){
+                    if(!sendMessage("No message specified. Usage: SEND username message")) {
+                        throw std::runtime_error("Sending answer failed.");
                     }
-                    std::cout << "delete " << msg << " of " << user << "\n\n";
-                    //delete specific msg of user
+                    continue;
+                }
+                
+                std::cout << "Message received: '" << message << "' from user: " << user << "\n\n";
+                //save msg in doc
+                try{
+                    //here instead of ../ -> m_mailDir
+                    std::string path = "../" + user;
+                    makeDirSaveMessage(user, path, message);
+                }catch(std::filesystem::filesystem_error & e){
+                    std::cerr << e.what() << std::endl;
+                }
+                //send confirmation msg
+                if(!sendMessage("Message saved")) {
+                    throw std::runtime_error("Sending answer failed.");
                 }
 
-            //send confirmation msg
-            if(!sendMessage(SERV_OK)) {
-                throw std::runtime_error("Sending answer failed.");
+            }else if(message.find(CMD_LIST)!=std::string::npos){
+                std::string user = removeCommand(message, CMD_LIST);
+
+                std::cout << "list msgs of " << user << "\n\n";
+                //send confirmation msg
+                if(!sendMessage(SERV_OK)) {
+                    throw std::runtime_error("Sending answer failed.");
+                }
+                //get list of all msg of user
+
+            }else if(message.find(CMD_READ)!=std::string::npos){
+                message = removeCommand(message, CMD_READ);
+                std::string user;
+                std::istringstream ss(message);
+
+                getline(ss, user, ' ');
+                //erase username from message
+                int start_pos = message.find(user);
+                int end_pos = user.size() + 1;
+                message.erase(start_pos, end_pos);
+
+                std::cout << "read message #" << message << " of " << user << "\n\n";
+                //send confirmation msg
+                if(!sendMessage(SERV_OK)) {
+                    throw std::runtime_error("Sending answer failed.");
+                }
+                //read specific msg of user
+
+            }else if(message.find(CMD_DEL)!=std::string::npos){
+                message = removeCommand(message, CMD_DEL);
+                std::string user;
+                std::istringstream ss(message);
+
+                getline(ss, user, ' ');
+                //erase username from message
+                int start_pos = message.find(user);
+                int end_pos = user.size() + 1;
+                message.erase(start_pos, end_pos);
+                std::cout << "delete message #" << message << " of " << user << "\n\n";
+                //send confirmation msg
+                if(!sendMessage(SERV_OK)) {
+                    throw std::runtime_error("Sending answer failed.");
+                }
+                //delete specific msg of user
+            }else{
+                if(message != CMD_QUIT){
+                    if(!sendMessage("No command specified. Try: SEND, LIST, READ, DEL")) {
+                        throw std::runtime_error("Sending answer failed.");
+                    }
+                }else{
+                    if(!sendMessage(SERV_OK)) {
+                        throw std::runtime_error("Sending answer failed.");
+                    }
+                }
+                
             }
 
         } while(strcmp(m_receiveBuffer, CMD_QUIT) != 0 && !m_abortRequested);
@@ -145,6 +180,56 @@ namespace twServer {
 
     void ClientHandler::receiveMessage(){
         
+    }
+
+    std::string ClientHandler::removeCommand(std::string message, std::string command){
+        int start_pos = message.find(command);
+        //+1 to remove whitespace
+        int end_pos = command.size() + 1;
+        message.erase(start_pos, end_pos);
+        return message;
+    }
+
+    void ClientHandler::makeDirSaveMessage(std::string user, std::string path, std::string message){
+        std::string ID;
+        //if dir does not exist, ID = 1
+        //else get next id
+        if(std::filesystem::is_directory(path) && std::filesystem::exists(path)){
+           ID = getNextID(user, path); 
+        }else{
+            ID = std::to_string(1);
+        }
+        //if dir does not exit, creates dir + file
+        //else only file
+        std::filesystem::path filepath{path};
+        filepath /= ID;
+        std::filesystem::create_directories(filepath.parent_path());
+
+        //creates file + writes in it
+        std::ofstream ofs(filepath);
+        ofs << message; 
+        ofs.close();
+    }
+
+    std::string ClientHandler::getNextID(std::string user, std::string path){
+        std::string filename;
+        int highestNr = 1;
+        std::vector<int> ids;
+        
+        for (const auto & entry : std::filesystem::directory_iterator(path)){
+           filename = entry.path();
+           filename.erase(0, path.size()+1);
+           ids.push_back(stoi(filename));
+        }
+        if(ids.size() == 0){
+            return std::to_string(1);
+        }
+        std::sort(ids.begin(), ids.end());
+
+        highestNr = ids.at(ids.size()-1) + 1;
+        std::string newID = std::to_string(highestNr);
+
+        return newID;
     }
 
     

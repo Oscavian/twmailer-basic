@@ -21,20 +21,17 @@ namespace twClient {
         Client(const std::string& ip, int port);
         ~Client();
 
-        std::string getCmd();
-
-        std::string getSender();
-
-        std::string getReceiver();
-
-        std::string getSubject();
-
         void start();
         void run();
         void abort();
 
         bool sendMessage(const char *buffer);
         void receiveMessage();
+
+        std::string handleSend();
+        std::string handleRead();
+        std::string handleDel();
+        std::string handleList();
 
     private:
         struct sockaddr_in m_address{};

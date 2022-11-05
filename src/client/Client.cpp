@@ -32,16 +32,7 @@ namespace twClient {
         std::cout << "Client setup successful!\n";
     }
 
-    Client::~Client() {
-        /*
-        try {
-            abort();
-        }
-        catch(const std::exception& e) {
-            std::cerr << e.what() << '\n';
-        }
-        */
-    }
+    Client::~Client() {}
 
     void Client::start() {
 
@@ -60,13 +51,41 @@ namespace twClient {
 
         bool isQuit = false;
         std::string message;
+        std::string input;
+        std::string command;
 
         do {
-            std::cout << ">> ";
-            std::getline(std::cin, message);
+            
+            std::cout << "CMD >> ";
+            std::getline(std::cin, command);
+
+            if(command == CMD_SEND){
+                message = command + "\n" + handleSend();
+            
+            } else if(command == CMD_READ) {
+                message = command + "\n" + handleRead();
+
+            } else if(command == CMD_LIST) {
+                message = command + "\n" + handleList();
+
+            } else if(command == CMD_DEL) {
+                message = command + "\n" + handleDel();
+
+            } else if(command == CMD_QUIT) {
+                message = command + "\n";
+                isQuit = true; 
+            } else if(command == "?" || command == "HELP") {
+                std::cout << "Available commands:\n"
+                          << "SEND - send a mail to a recipients mailbox\n"
+                          << "READ - read a mail from a users mailbox\n"
+                          << "LIST - list a users mailbox items\n"
+                          << "DEL - delete a mail\n"
+                          << "HELP - display this list\n";
+                continue;
+            } 
+            
 
             if (!message.empty() && message != "\n") {
-                isQuit = (message == CMD_QUIT);
                 //Nachricht an Server muss mit einem der Keywords starten, da für parsing benötigt
                 //SEND somemessage
                 //LIST user
@@ -77,15 +96,81 @@ namespace twClient {
                 if (!sendMessage(message.c_str())) {
                     throw std::runtime_error("Send failed, abort...");
                 }   
-                std::cout << "Message sent! Message:" << message << "\n"; 
+                std::cout << "Message sent! Message:\n-----\n" << message << "\n-----\n"; 
 
                 receiveMessage();
+            } else {
+                std::cout << "Message is empty!\n";
             }
 
         } while (!isQuit);
 
         abort();
 
+    }
+
+    std::string Client::handleSend() {
+        std::string sender;
+        std::string receiver;
+        std::string subject;
+        std::string message;
+        
+        std::cout << "SENDER >> ";
+        std::getline(std::cin, sender);
+
+        std::cout << "RECEIVER >> ";
+        std::getline(std::cin, receiver);
+
+        std::cout << "SUBJECT >> ";
+        std::getline(std::cin, subject);
+
+        std::cout << "MESSAGE (end with dot + newline)\n>> ";
+        
+        std::string line;
+        
+        do {
+            std::getline(std::cin, line);
+            message.append(line + "\n");
+            std::cout << ">> ";
+        } while (line.length() == 0 || !((line.length() == 1) && line.at(0) == '.'));
+
+        return sender + "\n" + receiver + "\n" + subject + "\n" + message;
+
+    }
+
+    std::string Client::handleRead() {
+        std::string username;
+        std::string msgnr;
+
+        std::cout << "USERNAME >> ";
+        std::getline(std::cin, username);
+
+        std::cout << "MSGNR >> ";
+        std::getline(std::cin, msgnr);
+        
+        return username + "\n" + msgnr + "\n";
+    }
+
+    std::string Client::handleList() {
+        std::string username;
+
+        std::cout << "USERNAME >> ";
+        std::getline(std::cin, username);
+        
+        return username + "\n";
+    }
+
+    std::string Client::handleDel() {
+        std::string username;
+        std::string msgnr;
+
+        std::cout << "USERNAME >> ";
+        std::getline(std::cin, username);
+
+        std::cout << "MSGNR >> ";
+        std::getline(std::cin, msgnr);
+
+        return username + "\n" + msgnr + "\n";
     }
 
     bool Client::sendMessage(const char *buffer) {
@@ -103,12 +188,6 @@ namespace twClient {
             m_recvBuffer[size] = '\0';
 
             std::cout << "<< " << m_recvBuffer << "\n";
-
-            /*
-            if (strcmp("OK", m_recvBuffer) != 0) {
-                throw std::runtime_error("Server error occured, abort...");
-            }
-            */
         }
     }
 

@@ -61,7 +61,7 @@ namespace twServer {
                 message = removeCommand(message, CMD_SEND);
                 //only command sent
                 if(message.size() == 0){
-                    if(!sendMessage("No user or message specified. Usage: SEND username message")) {
+                    if(!sendMessage(SERV_ERR)) {
                         throw std::runtime_error("Sending answer failed.");
                     }
                     continue;
@@ -76,7 +76,7 @@ namespace twServer {
                 message.erase(start_pos, end_pos);
 
                 if(message.size() == 0){
-                    if(!sendMessage("No message specified. Usage: SEND username message")) {
+                    if(!sendMessage(SERV_ERR)) {
                         throw std::runtime_error("Sending answer failed.");
                     }
                     continue;
@@ -92,7 +92,7 @@ namespace twServer {
                     std::cerr << e.what() << std::endl;
                 }
                 //send confirmation msg
-                if(!sendMessage("Message saved")) {
+                if(!sendMessage(SERV_OK)) {
                     throw std::runtime_error("Sending answer failed.");
                 }
 
@@ -142,7 +142,7 @@ namespace twServer {
                 //delete specific msg of user
             }else{
                 if(message != CMD_QUIT){
-                    if(!sendMessage("No command specified. Try: SEND, LIST, READ, DEL")) {
+                    if(!sendMessage(SERV_ERR)) {
                         throw std::runtime_error("Sending answer failed.");
                     }
                 }else{

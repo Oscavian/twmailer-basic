@@ -11,6 +11,7 @@ namespace twServer {
         m_ipAddr = ipAddr;
         m_socket = socket;
         m_mailDir = mailDir;
+        m_abortRequested = false;
     }   
 
     ClientHandler::~ClientHandler() {

@@ -1,5 +1,6 @@
 #include "header/ClientHandler.hpp"
 #include "../share/protocol.h"
+#include "header/Request.hpp"
 #include <sstream>
 #include <filesystem>
 #include <fstream>
@@ -28,68 +29,32 @@ namespace twServer {
 
         do {
             //receive data
+            size = receiveMessage();
 
-            size = recv(*m_socket, m_receiveBuffer, BUF - 1, 0);
-
-            if (size == -1) {
-                if (m_abortRequested) {
-                    std::cerr << "recv error after aborted\n";
-                } else {
-                    std::cerr << "recv error";
-                }
+            if(size == 0 || size == -1){
                 break;
             }
-
-            if (size == 0) {
-                std::cout << "Client closed remote socket\n";
-                break;
-            }
-
-            //remove newline from client message
-            if(m_receiveBuffer[size - 2] == '\r' && m_receiveBuffer[size -1] == '\n'){
-                size -= 2;
-            } else if(m_receiveBuffer[size - 1] == '\n'){
-                size -= 1;
-            }
-
-            //null terminate message & print to stdout
-            m_receiveBuffer[size] = '\0';
-            std::cout << "Input received: " << m_receiveBuffer << "\n";
-            std::string message = m_receiveBuffer;
+            
+            Request request = Request(std::istringstream(std::string(m_receiveBuffer)));
 
             //here parsing client input
-            if(message.find(CMD_SEND)!=std::string::npos){
-                message = removeCommand(message, CMD_SEND);
-                //only command sent
-                if(message.size() == 0){
+            if(request.getMethod() == CMD_SEND){
+
+                if(request.getMethod().empty()){
                     if(!sendMessage(SERV_ERR)) {
                         throw std::runtime_error("Sending answer failed.");
                     }
-                    continue;
+                    return;
                 }
-                std::string user;
-                std::istringstream ss(message);
 
-                getline(ss, user, ' ');
-                //erase username from message
-                int start_pos = message.find(user);
-                int end_pos = user.size() + 1;
-                message.erase(start_pos, end_pos);
+                std::cout << "Message received: \n" << request.getMessage() << " from user: " << request.getSender() << " to " << request.getReceiver() << "\n\n";
 
-                if(message.size() == 0){
-                    if(!sendMessage(SERV_ERR)) {
-                        throw std::runtime_error("Sending answer failed.");
-                    }
-                    continue;
-                }
-                
-                std::cout << "Message received: '" << message << "' from user: " << user << "\n\n";
                 //save msg in doc
-                try{
-                    //here instead of ../ -> m_mailDir
-                    std::string path = "../" + user;
-                    makeDirSaveMessage(user, path, message);
-                }catch(std::filesystem::filesystem_error & e){
+                try {
+                //here instead of ../ -> m_mailDir
+                    std::string path = "../" + request.getReceiver();
+                    makeDirSaveMessage(request.getReceiver(), path, request.getMessage());
+                } catch(std::filesystem::filesystem_error & e){
                     std::cerr << e.what() << std::endl;
                 }
                 //send confirmation msg
@@ -97,52 +62,33 @@ namespace twServer {
                     throw std::runtime_error("Sending answer failed.");
                 }
 
-            }else if(message.find(CMD_LIST)!=std::string::npos){
-                std::string user = removeCommand(message, CMD_LIST);
+            } else if(request.getMethod() == CMD_LIST){
 
-                std::cout << "list msgs of " << user << "\n\n";
+                std::cout << "list msgs of " << request.getUsername() << "\n\n";
                 //send confirmation msg
                 if(!sendMessage(SERV_OK)) {
                     throw std::runtime_error("Sending answer failed.");
                 }
                 //get list of all msg of user
 
-            }else if(message.find(CMD_READ)!=std::string::npos){
-                message = removeCommand(message, CMD_READ);
-                std::string user;
-                std::istringstream ss(message);
+            } else if(request.getMethod() == CMD_READ){
 
-                getline(ss, user, ' ');
-                //erase username from message
-                int start_pos = message.find(user);
-                int end_pos = user.size() + 1;
-                message.erase(start_pos, end_pos);
-
-                std::cout << "read message #" << message << " of " << user << "\n\n";
+                std::cout << "read message #" << request.getMsgnum() << " of " << request.getUsername() << "\n\n";
                 //send confirmation msg
                 if(!sendMessage(SERV_OK)) {
                     throw std::runtime_error("Sending answer failed.");
                 }
                 //read specific msg of user
 
-            }else if(message.find(CMD_DEL)!=std::string::npos){
-                message = removeCommand(message, CMD_DEL);
-                std::string user;
-                std::istringstream ss(message);
-
-                getline(ss, user, ' ');
-                //erase username from message
-                int start_pos = message.find(user);
-                int end_pos = user.size() + 1;
-                message.erase(start_pos, end_pos);
-                std::cout << "delete message #" << message << " of " << user << "\n\n";
+            } else if(request.getMethod() == CMD_DEL){
+                std::cout << "delete message #" << request.getMsgnum() << " of " << request.getUsername() << "\n\n";
                 //send confirmation msg
                 if(!sendMessage(SERV_OK)) {
                     throw std::runtime_error("Sending answer failed.");
                 }
                 //delete specific msg of user
             }else{
-                if(message != CMD_QUIT){
+                if(request.getMessage() != CMD_QUIT){
                     if(!sendMessage(SERV_ERR)) {
                         throw std::runtime_error("Sending answer failed.");
                     }
@@ -179,8 +125,36 @@ namespace twServer {
         }
     }
 
-    void ClientHandler::receiveMessage(){
-        
+    int ClientHandler::receiveMessage() {
+        int size;
+
+        size = recv(*m_socket, m_receiveBuffer, BUF - 1, 0);
+
+            if (size == -1) {
+                if (m_abortRequested) {
+                    std::cerr << "recv error after aborted\n";
+                } else {
+                    std::cerr << "recv error";
+                }
+                return -1;
+            }
+
+            if (size == 0) {
+                std::cerr << "Client closed remote socket\n";
+                return 0;
+            }
+
+            //remove newline from client message
+            if(m_receiveBuffer[size - 2] == '\r' && m_receiveBuffer[size -1] == '\n'){
+                size -= 2;
+            } else if(m_receiveBuffer[size - 1] == '\n'){
+                size -= 1;
+            }
+
+            //null terminate message
+            m_receiveBuffer[size] = '\0';
+
+            return size;
     }
 
     std::string ClientHandler::removeCommand(std::string message, std::string command){
@@ -231,6 +205,11 @@ namespace twServer {
         std::string newID = std::to_string(highestNr);
 
         return newID;
+    }
+
+    void ClientHandler::handleSend(Request request) {
+        
+
     }
 
     

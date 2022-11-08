@@ -177,7 +177,7 @@ namespace twClient {
         return send(m_socket, buffer, strlen(buffer), 0) != -1;
     }
 
-    void Client::receiveMessage() {
+    int Client::receiveMessage() {
         int size = recv(m_socket, m_recvBuffer, BUF - 1, 0);
 
         if (size == -1) {
@@ -189,6 +189,7 @@ namespace twClient {
 
             std::cout << "<< " << m_recvBuffer << "\n";
         }
+        return size;
     }
 
 

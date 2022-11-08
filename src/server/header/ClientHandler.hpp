@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <cstring>
+#include "Request.hpp"
 
 #include "../../share/ClientBase.h"
 
@@ -27,11 +28,13 @@ namespace twServer {
             void start();
             void run();
             bool sendMessage(const char* buffer);
-            void receiveMessage();
+            int receiveMessage();
             std::string removeCommand(std::string message, std::string command);
             void makeDirSaveMessage(std::string user, std::string path, std::string message);
             std::string getNextID(std::string user, std::string path);
             void abort();
+
+            void handleSend(Request request);
 
         private:
             int *m_socket;

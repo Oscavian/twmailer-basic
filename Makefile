@@ -24,14 +24,17 @@ cmain: $(CLIENT_PATH)/main.cpp
 
 # ---- SERVER ---- #
 
-server: smain Server ClientHandler
-	$(CC) $(CFLAGS) -o $(BINDIR)/twmailer-server $(OBJDIR)/smain.o $(OBJDIR)/Server.o $(OBJDIR)/ClientHandler.o
+server: smain Server ClientHandler Request
+	$(CC) $(CFLAGS) -o $(BINDIR)/twmailer-server $(OBJDIR)/smain.o $(OBJDIR)/Server.o $(OBJDIR)/ClientHandler.o $(OBJDIR)/Request.o
 
 Server:
 	$(CC) $(CFLAGS) -c $(SERVER_PATH)/Server.cpp -o $(OBJDIR)/Server.o
 
 ClientHandler:
 	$(CC) $(CFLAGS) -c $(SERVER_PATH)/ClientHandler.cpp -o $(OBJDIR)/ClientHandler.o
+
+Request:
+	$(CC) $(CFLAGS) -c $(SERVER_PATH)/Request.cpp -o $(OBJDIR)/Request.o
 
 smain: $(SERVER_PATH)/main.cpp
 	$(CC) $(CFLAGS) -c $(SERVER_PATH)/main.cpp -o $(OBJDIR)/smain.o

@@ -52,7 +52,7 @@ namespace twServer {
                 //save msg in doc
                 try {
                 //here instead of ../ -> m_mailDir
-                    std::string path = "../" + request.getReceiver();
+                    std::string path = m_mailDir + "/" + request.getReceiver();
                     makeDirSaveMessage(request.getReceiver(), path, request.getMessage());
                 } catch(std::filesystem::filesystem_error & e){
                     std::cerr << e.what() << std::endl;

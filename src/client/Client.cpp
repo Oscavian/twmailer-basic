@@ -86,13 +86,6 @@ namespace twClient {
             
 
             if (!message.empty() && message != "\n") {
-                //Nachricht an Server muss mit einem der Keywords starten, da für parsing benötigt
-                //SEND user somemessage
-                //LIST user
-                //READ user msgID
-                //DEL user msgID
-                //QUIT
-                
                 if (!sendMessage(message.c_str())) {
                     throw std::runtime_error("Send failed, abort...");
                 }   

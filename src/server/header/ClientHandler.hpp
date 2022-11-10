@@ -31,6 +31,9 @@ namespace twServer {
             int receiveMessage();
             void makeDirSaveMessage(std::string user, std::string path, std::string message);
             std::string getNextID(std::string user, std::string path);
+            void listMessages(std::string path);
+            void readMessage(std::string path, std::string msgNum);
+            void deleteMessage(std::string path, std::string msgNum);
             void abort();
 
         private:

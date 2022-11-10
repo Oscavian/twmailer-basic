@@ -29,12 +29,9 @@ namespace twServer {
             void run();
             bool sendMessage(const char* buffer);
             int receiveMessage();
-            std::string removeCommand(std::string message, std::string command);
             void makeDirSaveMessage(std::string user, std::string path, std::string message);
             std::string getNextID(std::string user, std::string path);
             void abort();
-
-            void handleSend(Request request);
 
         private:
             int *m_socket;

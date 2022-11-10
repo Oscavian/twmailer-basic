@@ -25,7 +25,7 @@ namespace twServer {
 
     void ClientHandler::run() {
         int size;
-        this->sendMessage("Welcome!\n");
+        sendMessage("Welcome to my server! Please enter your Commands...\n");
 
         do {
             //receive data
@@ -41,9 +41,7 @@ namespace twServer {
             if(request.getMethod() == CMD_SEND){
 
                 if(request.getMethod().empty()){
-                    if(!sendMessage(SERV_ERR)) {
-                        throw std::runtime_error("Sending answer failed.");
-                    }
+                    sendMessage(SERV_ERR);
                     return;
                 }
 
@@ -58,44 +56,34 @@ namespace twServer {
                     std::cerr << e.what() << std::endl;
                 }
                 //send confirmation msg
-                if(!sendMessage(SERV_OK)) {
-                    throw std::runtime_error("Sending answer failed.");
-                }
+                sendMessage(SERV_OK);
 
             } else if(request.getMethod() == CMD_LIST){
 
                 std::cout << "list msgs of " << request.getUsername() << "\n\n";
                 //send confirmation msg
-                if(!sendMessage(SERV_OK)) {
-                    throw std::runtime_error("Sending answer failed.");
-                }
+                sendMessage(SERV_OK);
                 //get list of all msg of user
 
             } else if(request.getMethod() == CMD_READ){
 
                 std::cout << "read message #" << request.getMsgnum() << " of " << request.getUsername() << "\n\n";
                 //send confirmation msg
-                if(!sendMessage(SERV_OK)) {
-                    throw std::runtime_error("Sending answer failed.");
-                }
+                sendMessage(SERV_OK);
                 //read specific msg of user
 
             } else if(request.getMethod() == CMD_DEL){
                 std::cout << "delete message #" << request.getMsgnum() << " of " << request.getUsername() << "\n\n";
                 //send confirmation msg
-                if(!sendMessage(SERV_OK)) {
-                    throw std::runtime_error("Sending answer failed.");
-                }
+                sendMessage(SERV_OK);
                 //delete specific msg of user
             }else{
                 if(request.getMessage() != CMD_QUIT){
-                    if(!sendMessage(SERV_ERR)) {
-                        throw std::runtime_error("Sending answer failed.");
-                    }
-                }else{
-                    if(!sendMessage(SERV_OK)) {
-                        throw std::runtime_error("Sending answer failed.");
-                    }
+                    sendMessage(SERV_ERR);
+
+                } else {
+                    sendMessage(SERV_OK);
+
                 }
                 
             }
@@ -107,7 +95,10 @@ namespace twServer {
     }
 
     bool ClientHandler::sendMessage(const char* buffer) {
-        return send(*m_socket, buffer, strlen(buffer), 0) != -1;
+        if(send(*m_socket, buffer, strlen(buffer), 0) == -1){
+            throw std::runtime_error("Sending answer failed.");
+        }
+        return true;
     }
 
     void ClientHandler::abort() {
@@ -157,14 +148,6 @@ namespace twServer {
             return size;
     }
 
-    std::string ClientHandler::removeCommand(std::string message, std::string command){
-        int start_pos = message.find(command);
-        //+1 to remove whitespace
-        int end_pos = command.size() + 1;
-        message.erase(start_pos, end_pos);
-        return message;
-    }
-
     void ClientHandler::makeDirSaveMessage(std::string user, std::string path, std::string message){
         std::string ID;
         //if dir does not exist, ID = 1
@@ -205,11 +188,6 @@ namespace twServer {
         std::string newID = std::to_string(highestNr);
 
         return newID;
-    }
-
-    void ClientHandler::handleSend(Request request) {
-        
-
     }
 
     

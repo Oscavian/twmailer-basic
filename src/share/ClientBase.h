@@ -7,8 +7,8 @@ class ClientBase {
         virtual void run() = 0;
         virtual void abort() = 0;
 
-        virtual bool sendMessage(const char *buffer) = 0;
-        virtual int receiveMessage() = 0;
+        virtual bool sendBuffer(const char *buffer) = 0;
+        virtual int receiveBuffer() = 0;
 };
 
 #endif

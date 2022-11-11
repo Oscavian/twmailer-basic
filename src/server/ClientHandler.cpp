@@ -25,11 +25,11 @@ namespace twServer {
 
     void ClientHandler::run() {
         int size;
-        sendMessage("Welcome to my server! Please enter your Commands...\n");
+        sendBuffer("Welcome to my server! Please enter your Commands...\n");
 
         do {
             //receive data
-            size = receiveMessage();
+            size = receiveBuffer();
 
             if(size == 0 || size == -1){
                 break;
@@ -37,11 +37,13 @@ namespace twServer {
             
             Request request = Request(std::istringstream(std::string(m_receiveBuffer)));
 
+            std::string path = m_mailDir + "/" + request.getUsername();
+
             //here parsing client input
             if(request.getMethod() == CMD_SEND){
 
                 if(request.getMethod().empty()){
-                    sendMessage(SERV_ERR);
+                    sendBuffer(SERV_ERR);
                     return;
                 }
 
@@ -49,34 +51,31 @@ namespace twServer {
 
                 //save msg in doc
                 try {
-                    std::string path = m_mailDir + "/" + request.getReceiver();
+                    path = m_mailDir + "/" + request.getReceiver();
                     makeDirSaveMessage(request.getReceiver(), path, request.getMessage());
                 } catch(std::filesystem::filesystem_error & e){
                     std::cerr << e.what() << std::endl;
                 }
                 //send confirmation msg
-                sendMessage(SERV_OK);
+                sendBuffer(SERV_OK);
 
             } else if(request.getMethod() == CMD_LIST){
                 std::cout << "List messages of user " << request.getUsername() << "\n\n";
-                std::string path = m_mailDir + "/" + request.getUsername();
                 listMessages(path);
 
             } else if(request.getMethod() == CMD_READ){
                 std::cout << "Read message #" << request.getMsgnum() << " of user " << request.getUsername() << "\n\n";
-                std::string path = m_mailDir + "/" + request.getUsername();
                 readMessage(path, request.getMsgnum());
 
-            } else if(request.getMethod() == CMD_DEL){
+            } else if(request.getMethod() == CMD_DEL) {
                 std::cout << "Delete message #" << request.getMsgnum() << " of user " << request.getUsername() << "\n\n";
-                std::string path = m_mailDir + "/" + request.getUsername();
                 deleteMessage(path, request.getMsgnum());
-            }else{
+            } else{
                 if(request.getMethod() != CMD_QUIT){
-                    sendMessage(SERV_ERR);
+                    sendBuffer(SERV_ERR);
 
                 } else {
-                    sendMessage(SERV_OK);
+                    sendBuffer(SERV_OK);
                 }
                 
             }
@@ -87,7 +86,7 @@ namespace twServer {
 
     }
 
-    bool ClientHandler::sendMessage(const char* buffer) {
+    bool ClientHandler::sendBuffer(const char* buffer) {
         if(send(*m_socket, buffer, strlen(buffer), 0) == -1){
             throw std::runtime_error("Sending answer failed.");
         }
@@ -109,7 +108,7 @@ namespace twServer {
         }
     }
 
-    int ClientHandler::receiveMessage() {
+    int ClientHandler::receiveBuffer() {
         int size;
 
         size = recv(*m_socket, m_receiveBuffer, BUF - 1, 0);
@@ -182,6 +181,12 @@ namespace twServer {
 
         return newID;
     }
+
+    void ClientHandler::sendMessage(std::string path) {
+        
+    }
+
+
     void ClientHandler::listMessages(std::string path){
         std::string filename;
         std::string files = "Messages: \n";
@@ -196,9 +201,9 @@ namespace twServer {
         }
         if(files.size() > size){
             const char* m_files = files.c_str();
-            sendMessage(m_files);
+            sendBuffer(m_files);
         }else{
-            sendMessage("No Messages");
+            sendBuffer("No Messages");
         }
     }
 
@@ -232,10 +237,10 @@ namespace twServer {
             }
             readFile.close();
             const char* m_content = content.c_str();
-            sendMessage(m_content);
+            sendBuffer(m_content);
         }else{
             //if file has not been found
-            sendMessage("Message does not exist");
+            sendBuffer("Message does not exist");
         }  
     }
 
@@ -259,13 +264,13 @@ namespace twServer {
             const char* filepath = (path + "/" + m_filename).c_str();
             if(remove(filepath) != 0){
                 std::cerr << "Error deleting message\n";
-                sendMessage(SERV_ERR);
+                sendBuffer(SERV_ERR);
                 return;
             }
-            sendMessage(("Deleted message #" + m_filename).c_str());
+            sendBuffer(("Deleted message #" + m_filename).c_str());
         }else{
             //if file has not been found
-            sendMessage("Message does not exist");
+            sendBuffer("Message does not exist");
         }
     }
 }

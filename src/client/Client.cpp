@@ -38,7 +38,8 @@ namespace twClient {
 
         // Connect to server socket
         if (connect(m_socket, (struct sockaddr *) &m_address, sizeof(m_address)) == -1) {
-            throw std::runtime_error("Connect error - no server available");
+            std::string msg = "Connect error - no server available at " + std::string(inet_ntoa(m_address.sin_addr)) + ":" + std::to_string(ntohs(m_address.sin_port));
+            throw std::runtime_error(msg);
         }
 
 
@@ -112,11 +113,15 @@ namespace twClient {
         std::string subject;
         std::string message;
         
-        std::cout << "SENDER >> ";
-        std::getline(std::cin, sender);
+        while(sender.empty()){
+            std::cout << "SENDER >> ";
+            std::getline(std::cin, sender);
+        }
 
-        std::cout << "RECEIVER >> ";
-        std::getline(std::cin, receiver);
+        while(receiver.empty()){
+            std::cout << "RECEIVER >> ";
+            std::getline(std::cin, receiver);
+        }
 
         std::cout << "SUBJECT >> ";
         std::getline(std::cin, subject);

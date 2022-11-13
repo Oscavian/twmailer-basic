@@ -19,6 +19,11 @@ namespace twServer {
 
 
         if(m_method == CMD_SEND) {
+
+            if(m_params.size() < 5){
+                return;
+            }
+
             //SENDER
             m_sender = m_params.at(1).substr(0, 8);
 
@@ -34,14 +39,29 @@ namespace twServer {
             }
 
         } else if(m_method == CMD_LIST) {
+            
+            if(m_params.size() < 2){
+                return; 
+            }
+
             m_username = m_params.at(1).substr(0, 8);
 
         } else if(m_method == CMD_READ) {
+            
+            if(m_params.size() < 3){
+                return; 
+            }
+
             m_username = m_params.at(1).substr(0, 8);
 
             m_msgnum = m_params.at(2);
 
         } else if(m_method == CMD_DEL) {
+            
+            if(m_params.size() < 3){
+                return; 
+            }
+
             m_username = m_params.at(1).substr(0, 8);
             m_msgnum = m_params.at(2);
         }

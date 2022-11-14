@@ -1,5 +1,11 @@
+# Build files
+
 bin/*
+!bin/README.md
 obj/*
+!obj/README.md
+
+# IDEs
 .vscode/*
 .idea/
 cmake-build-debug/

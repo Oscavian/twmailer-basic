@@ -27,10 +27,11 @@ namespace twServer {
 
             void start();
             void run();
-            bool sendMessage(const char* buffer);
-            int receiveMessage();
-            void makeDirSaveMessage(std::string user, std::string path, std::string message);
+            bool sendBuffer(const char* buffer);
+            int receiveBuffer();
             std::string getNextID(std::string user, std::string path);
+
+            void saveMessage(Request content, std::string path);
             void listMessages(std::string path);
             void readMessage(std::string path, std::string msgNum);
             void deleteMessage(std::string path, std::string msgNum);

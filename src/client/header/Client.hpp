@@ -25,8 +25,8 @@ namespace twClient {
         void run();
         void abort();
 
-        bool sendMessage(const char *buffer);
-        int receiveMessage();
+        bool sendBuffer(const char *buffer);
+        int receiveBuffer();
 
         std::string handleSend();
         std::string handleRead();

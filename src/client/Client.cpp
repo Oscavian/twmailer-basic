@@ -38,11 +38,12 @@ namespace twClient {
 
         // Connect to server socket
         if (connect(m_socket, (struct sockaddr *) &m_address, sizeof(m_address)) == -1) {
-            throw std::runtime_error("Connect error - no server available");
+            std::string msg = "Connect error - no server available at " + std::string(inet_ntoa(m_address.sin_addr)) + ":" + std::to_string(ntohs(m_address.sin_port));
+            throw std::runtime_error(msg);
         }
 
 
-        receiveMessage();
+        receiveBuffer();
 
         run();
     }
@@ -82,16 +83,20 @@ namespace twClient {
                           << "DEL - delete a mail\n"
                           << "HELP - display this list\n";
                 continue;
-            } 
+            } else {
+                std::cout << "Invalid command. Type '?' for help.\n";
+                continue;
+            }
             
 
             if (!message.empty() && message != "\n") {
-                if (!sendMessage(message.c_str())) {
+                if (!sendBuffer(message.c_str())) {
                     throw std::runtime_error("Send failed, abort...");
                 }   
-                std::cout << "Message sent! Message:\n-----\n" << message << "\n-----\n"; 
+                std::cout << "Message sent! Message:\n-----\n" << message << "\n-----\n";
+                message.clear();
 
-                receiveMessage();
+                receiveBuffer();
             } else {
                 std::cout << "Message is empty!\n";
             }
@@ -108,11 +113,15 @@ namespace twClient {
         std::string subject;
         std::string message;
         
-        std::cout << "SENDER >> ";
-        std::getline(std::cin, sender);
+        while(sender.empty()){
+            std::cout << "SENDER >> ";
+            std::getline(std::cin, sender);
+        }
 
-        std::cout << "RECEIVER >> ";
-        std::getline(std::cin, receiver);
+        while(receiver.empty()){
+            std::cout << "RECEIVER >> ";
+            std::getline(std::cin, receiver);
+        }
 
         std::cout << "SUBJECT >> ";
         std::getline(std::cin, subject);
@@ -166,11 +175,11 @@ namespace twClient {
         return username + "\n" + msgnr + "\n";
     }
 
-    bool Client::sendMessage(const char *buffer) {
+    bool Client::sendBuffer(const char *buffer) {
         return send(m_socket, buffer, strlen(buffer), 0) != -1;
     }
 
-    int Client::receiveMessage() {
+    int Client::receiveBuffer() {
         int size = recv(m_socket, m_recvBuffer, BUF - 1, 0);
 
         if (size == -1) {

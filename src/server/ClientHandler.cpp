@@ -25,11 +25,11 @@ namespace twServer {
 
     void ClientHandler::run() {
         int size;
-        sendMessage("Welcome to my server! Please enter your Commands...\n");
+        sendBuffer("Welcome to my server! Please enter your Commands...\n");
 
         do {
             //receive data
-            size = receiveMessage();
+            size = receiveBuffer();
 
             if(size == 0 || size == -1){
                 break;
@@ -37,46 +37,70 @@ namespace twServer {
             
             Request request = Request(std::istringstream(std::string(m_receiveBuffer)));
 
+            std::string path = m_mailDir + "/" + request.getUsername();
+
+            if(request.getMethod().empty()){
+                sendBuffer(SERV_ERR);
+                return;
+            }
+
             //here parsing client input
             if(request.getMethod() == CMD_SEND){
 
-                if(request.getMethod().empty()){
-                    sendMessage(SERV_ERR);
-                    return;
-                }
-
                 std::cout << "Message received: \n" << request.getMessage() << "from user: " << request.getSender() << " to " << request.getReceiver() << "\n\n";
+
+                if(request.getReceiver().empty() || request.getSender().empty()) {
+                    sendBuffer(SERV_ERR);
+                    std::cerr << "Error: Request body incomplete - nothing saved.\n";
+                    continue;
+                }
 
                 //save msg in doc
                 try {
-                    std::string path = m_mailDir + "/" + request.getReceiver();
-                    makeDirSaveMessage(request.getReceiver(), path, request.getMessage());
+                    path = m_mailDir + "/" + request.getReceiver();
+                    saveMessage(request, path);
                 } catch(std::filesystem::filesystem_error & e){
                     std::cerr << e.what() << std::endl;
                 }
                 //send confirmation msg
-                sendMessage(SERV_OK);
+                sendBuffer(SERV_OK);
 
             } else if(request.getMethod() == CMD_LIST){
+                
+                if(request.getUsername().empty()){
+                    std::cerr << "Error: Username not specified!\n";
+                    sendBuffer(SERV_ERR);
+                    continue;
+                }
+
                 std::cout << "List messages of user " << request.getUsername() << "\n\n";
-                std::string path = m_mailDir + "/" + request.getUsername();
                 listMessages(path);
 
             } else if(request.getMethod() == CMD_READ){
+                if(request.getMsgnum().empty()){
+                    sendBuffer(SERV_ERR);
+                    std::cerr << "Error: Msgnum not specified!\n";
+                    continue;
+                }
+
                 std::cout << "Read message #" << request.getMsgnum() << " of user " << request.getUsername() << "\n\n";
-                std::string path = m_mailDir + "/" + request.getUsername();
                 readMessage(path, request.getMsgnum());
 
-            } else if(request.getMethod() == CMD_DEL){
+            } else if(request.getMethod() == CMD_DEL) {
+                if(request.getMsgnum().empty()){
+                    sendBuffer(SERV_ERR);
+                    std::cerr << "Error: Msgnum not specified!\n";
+                    continue;
+                }
                 std::cout << "Delete message #" << request.getMsgnum() << " of user " << request.getUsername() << "\n\n";
-                std::string path = m_mailDir + "/" + request.getUsername();
                 deleteMessage(path, request.getMsgnum());
-            }else{
+
+            } else {
                 if(request.getMethod() != CMD_QUIT){
-                    sendMessage(SERV_ERR);
+                    sendBuffer(SERV_ERR);
 
                 } else {
-                    sendMessage(SERV_OK);
+                    sendBuffer(SERV_OK);
                 }
                 
             }
@@ -85,13 +109,6 @@ namespace twServer {
 
         abort();
 
-    }
-
-    bool ClientHandler::sendMessage(const char* buffer) {
-        if(send(*m_socket, buffer, strlen(buffer), 0) == -1){
-            throw std::runtime_error("Sending answer failed.");
-        }
-        return true;
     }
 
     void ClientHandler::abort() {
@@ -109,7 +126,16 @@ namespace twServer {
         }
     }
 
-    int ClientHandler::receiveMessage() {
+
+    bool ClientHandler::sendBuffer(const char* buffer) {
+        if(send(*m_socket, buffer, strlen(buffer), 0) == -1){
+            throw std::runtime_error("Sending answer failed.");
+        }
+        return true;
+    }
+
+
+    int ClientHandler::receiveBuffer() {
         int size;
 
         size = recv(*m_socket, m_receiveBuffer, BUF - 1, 0);
@@ -141,12 +167,12 @@ namespace twServer {
             return size;
     }
 
-    void ClientHandler::makeDirSaveMessage(std::string user, std::string path, std::string message){
+    void ClientHandler::saveMessage(Request content, std::string path){
         std::string ID;
         //if dir does not exist, ID = 1
         //else get next id
         if(std::filesystem::is_directory(path) && std::filesystem::exists(path)){
-           ID = getNextID(user, path); 
+           ID = getNextID(content.getReceiver(), path); 
         }else{
             ID = std::to_string(1);
         }
@@ -158,7 +184,11 @@ namespace twServer {
 
         //creates file + writes in it
         std::ofstream ofs(filepath);
-        ofs << message; 
+        ofs << content.getSender() << "\n"
+            << content.getReceiver() << "\n"
+            << content.getSubject() << "\n"
+            << content.getMessage() << "\n"
+        ; 
         ofs.close();
     }
 
@@ -182,23 +212,29 @@ namespace twServer {
 
         return newID;
     }
+
+
     void ClientHandler::listMessages(std::string path){
         std::string filename;
-        std::string files = "Messages: \n";
-        long unsigned int size = files.size();
+        std::string response = "";
+        size_t size = response.size();
+        int cnt = 0; 
 
         if(std::filesystem::is_directory(path) && std::filesystem::exists(path)){
             for (const auto & entry : std::filesystem::directory_iterator(path)){
                 filename = entry.path();
                 filename.erase(0, path.size()+1);
-                files += filename + "\n";
+                response += filename + "\n";
+                cnt++;
             }
         }
-        if(files.size() > size){
-            const char* m_files = files.c_str();
-            sendMessage(m_files);
+
+        response = std::to_string(cnt) + "\n" + response;
+
+        if(response.size() > size){
+            sendBuffer(response.c_str());
         }else{
-            sendMessage("No Messages");
+            sendBuffer("0");
         }
     }
 
@@ -227,15 +263,17 @@ namespace twServer {
             //read every line until end of file
             while(!readFile.eof()){
                 while(getline(readFile, temp)){
-                    content += " " + temp;
+                    content += '\n' + temp;
                 }
             }
             readFile.close();
-            const char* m_content = content.c_str();
-            sendMessage(m_content);
+            
+            content = SERV_OK + '\n' + content;
+
+            sendBuffer(content.c_str());
         }else{
             //if file has not been found
-            sendMessage("Message does not exist");
+            sendBuffer(SERV_ERR);
         }  
     }
 
@@ -259,13 +297,13 @@ namespace twServer {
             const char* filepath = (path + "/" + m_filename).c_str();
             if(remove(filepath) != 0){
                 std::cerr << "Error deleting message\n";
-                sendMessage(SERV_ERR);
+                sendBuffer(SERV_ERR);
                 return;
             }
-            sendMessage(("Deleted message #" + m_filename).c_str());
+            sendBuffer(SERV_OK);
         }else{
             //if file has not been found
-            sendMessage("Message does not exist");
+            sendBuffer(SERV_ERR);
         }
     }
 }

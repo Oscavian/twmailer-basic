@@ -64,6 +64,15 @@ namespace twServer {
 
             m_username = m_params.at(1).substr(0, 8);
             m_msgnum = m_params.at(2);
+            
+        } else if(m_method == CMD_LOGIN){
+            if(m_params.size() < 2){
+                return;
+            }
+
+            m_username = m_params.at(1).substr(0, 8);
+
+            m_password = m_params.at(2);
         }
 
         

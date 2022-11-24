@@ -1,6 +1,7 @@
 #include "header/ClientHandler.hpp"
 #include "../share/protocol.h"
 #include "header/Request.hpp"
+#include "header/Ldap.hpp"
 #include <sstream>
 #include <filesystem>
 #include <fstream>
@@ -94,6 +95,31 @@ namespace twServer {
                 }
                 std::cout << "Delete message #" << request.getMsgnum() << " of user " << request.getUsername() << "\n\n";
                 deleteMessage(path, request.getMsgnum());
+
+            } else if(request.getMethod() == CMD_LOGIN){
+                if(request.getUsername().empty()){
+                    sendBuffer(SERV_ERR);
+                    std::cerr << "Error: No username specified!\n";
+                    continue;
+                }
+                if(request.getPassword().empty()){
+                    sendBuffer(SERV_ERR);
+                    std::cerr << "Error: No password specified!\n";
+                }
+                std::cout << "Trying to log in as user " << request.getUsername() << "\n\n";
+
+                Ldap ldap = Ldap(request.getUsername(), request.getPassword());
+                int userExists = ldap.checkIfUserExists();
+
+                if(userExists == 0){
+                    //user does not exist
+                    sendBuffer("No user with those credentials\n");
+                } else if(userExists == 1){
+                    //user does exist
+                    sendBuffer("Logged in\n");
+                } else if(userExists == -1){
+                    sendBuffer(SERV_ERR);
+                }
 
             } else {
                 if(request.getMethod() != CMD_QUIT){

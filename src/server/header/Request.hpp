@@ -18,6 +18,7 @@ namespace twServer {
             std::string getSubject() const { return m_subject; };
             std::string getMessage() const { return m_body; };
             std::string getUsername() const { return m_username; };
+            std::string getPassword() const {return m_password; };
             std::string getMsgnum() const { return m_msgnum; }; 
             
             std::string toString() const;
@@ -32,6 +33,7 @@ namespace twServer {
             std::string m_sender;
             
             std::string m_username;
+            std::string m_password;
             std::string m_msgnum;
 
             std::string m_receiver;

@@ -1,1 +1,0 @@
-Binary executables are saved to this folder

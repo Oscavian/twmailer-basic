@@ -6,6 +6,7 @@
 #define CMD_DEL "DEL"
 #define CMD_QUIT "QUIT"
 #define CMD_LIST "LIST"
+#define CMD_LOGIN "LOGIN"
 
 #define SERV_OK "OK"
 #define SERV_ERR "ERR"

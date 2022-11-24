@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 #include "Request.hpp"
+#include "Ldap.hpp"
 
 #include "../../share/ClientBase.h"
 
@@ -35,6 +36,7 @@ namespace twServer {
             void listMessages(std::string path);
             void readMessage(std::string path, std::string msgNum);
             void deleteMessage(std::string path, std::string msgNum);
+            bool loginUser(std::string username, std::string password);
             void abort();
 
         private:

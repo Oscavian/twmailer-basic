@@ -1,5 +1,6 @@
 CC = g++
-CFLAGS = -g -std=c++17 -Wall -Werror
+CFLAGS = -g -std=c++17 -Wall -Werror -I /usr/local/include/gtest/
+LIBS = -lldap -llber
 SRCDIR = src
 OBJDIR = obj
 BINDIR = bin
@@ -24,8 +25,8 @@ cmain: $(CLIENT_PATH)/main.cpp
 
 # ---- SERVER ---- #
 
-server: smain Server ClientHandler Request
-	$(CC) $(CFLAGS) -o $(BINDIR)/twmailer-server $(OBJDIR)/smain.o $(OBJDIR)/Server.o $(OBJDIR)/ClientHandler.o $(OBJDIR)/Request.o
+server: smain Server Ldap ClientHandler Request
+	$(CC) $(CFLAGS) -o $(BINDIR)/twmailer-server $(OBJDIR)/Ldap.o $(OBJDIR)/smain.o $(OBJDIR)/Server.o $(OBJDIR)/ClientHandler.o $(OBJDIR)/Request.o $(LIBS)
 
 Server:
 	$(CC) $(CFLAGS) -c $(SERVER_PATH)/Server.cpp -o $(OBJDIR)/Server.o
@@ -38,6 +39,9 @@ Request:
 
 smain: $(SERVER_PATH)/main.cpp
 	$(CC) $(CFLAGS) -c $(SERVER_PATH)/main.cpp -o $(OBJDIR)/smain.o
+
+Ldap:
+	$(CC) $(CFLAGS) -c $(SERVER_PATH)/Ldap.cpp -o $(OBJDIR)/Ldap.o $(LIBS)
 
 
 # ---- CLEAN ---- #

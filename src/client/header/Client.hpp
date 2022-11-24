@@ -28,6 +28,10 @@ namespace twClient {
         bool sendBuffer(const char *buffer);
         int receiveBuffer();
 
+        int getch();
+        std::string getpass();
+
+        std::string handleLogin();
         std::string handleSend();
         std::string handleRead();
         std::string handleDel();

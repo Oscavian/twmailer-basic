@@ -1,14 +1,17 @@
 #include "header/Server.hpp"
 #include <thread>
+#include <signal.h>
 
 namespace twServer {
 
     Server::Server(int port, std::string mailDir) {
+
         m_port = port;
         m_mailDir = mailDir;
     }
 
     void Server::start() {
+
         struct sockaddr_in address;
 
         int reuseValue = 1;
@@ -82,7 +85,12 @@ namespace twServer {
                                             m_mailDir, 1);
             m_clients.push_back(client);
 
-            std::thread(&ClientHandler::run, *client).detach();
+
+            std::thread* th = new std::thread(&ClientHandler::run, *client);
+
+            m_connections.push_back(th);
+
+            //std::thread(&ClientHandler::run, *client).detach();
 
             //client.run();
 
@@ -96,6 +104,7 @@ namespace twServer {
 
     void Server::abort() {
         std::cout << "Server Shutting down!\n";
+
 
         if (m_serverSocket != -1) {
             if (shutdown(m_serverSocket, SHUT_RDWR) == -1) {
@@ -117,6 +126,22 @@ namespace twServer {
         }
 
 
+    }
+
+    void twServer::Server::requestAbort() {
+        m_abortRequested = true;
+    }
+
+    void twServer::Server::setPort(int port) {
+        m_port = port;
+
+        if (port < 0 || port > 65535) {
+            throw std::invalid_argument("Port number out of range!");
+        }
+    }
+
+    void twServer::Server::setMailDir(const std::string& mailDir) {
+        m_mailDir = mailDir;
     }
 
 }

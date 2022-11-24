@@ -1,18 +1,30 @@
 #include <iostream>
 #include "header/Server.hpp"
+#include <signal.h>
+
+twServer::Server server;
+
+void signalHandler(int sig) {
+    std::cout << "SIGINT caught! Aborting...\n";
+    server.requestAbort();
+
+    exit(sig); //todo: handle better
+}
+
 
 int main(int argc, char** argv){
+
+    (void) signal(SIGINT, signalHandler);
 
     int port;
     std::string mailDir;
     std::vector<std::string> args(argv, argv + argc);
 
-        try {
+    try {
         if (args.size() != 3) {
             throw std::invalid_argument("Invalid arguments");
         }
 
-        //TODO: add validation
         port = std::stoi(args[1]);
         mailDir = argv[2];
 
@@ -22,10 +34,11 @@ int main(int argc, char** argv){
         return EXIT_FAILURE;
     }    
 
-    twServer::Server server(port, mailDir);
+    server.setMailDir(mailDir);
+    server.setPort(port);
 
     try {
-
+        
         server.start();
 
     } catch (const std::exception &e) {

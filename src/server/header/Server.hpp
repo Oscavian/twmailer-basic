@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <cstring>
 #include <iostream>
+#include <thread>
 
 #define CHECKNTHROW(X) ({int __val = (X); \
     if(__val == -1) { \
@@ -30,7 +31,8 @@ namespace twServer {
             void abort();
 
         private:
-            //std::vector<ClientHandler*> m_clients;
+            std::vector<ClientHandler*> m_clients;
+            std::vector<std::thread*> m_connections;
             int m_port;
             std::string m_mailDir;
             int m_serverSocket;

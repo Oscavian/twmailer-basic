@@ -8,11 +8,12 @@
 #include <bits/stdc++.h>
 
 namespace twServer {
-    ClientHandler::ClientHandler(std::string ipAddr, int *socket, std::string mailDir){
+    ClientHandler::ClientHandler(std::string ipAddr, int *socket, std::string mailDir, int clientId){
         m_ipAddr = ipAddr;
         m_socket = socket;
         m_mailDir = mailDir;
         m_abortRequested = false;
+        m_clientId = clientId;
     }   
 
     ClientHandler::~ClientHandler() {

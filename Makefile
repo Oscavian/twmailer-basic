@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -g -std=c++17 -Wall -Werror
+CFLAGS = -g -std=c++17 -Wall -Werror -pthread
 SRCDIR = src
 OBJDIR = obj
 BINDIR = bin

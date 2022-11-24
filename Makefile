@@ -12,35 +12,38 @@ rebuild: clean all
 
 all: server client
 
+client: ./bin/twmailer-client
+
+server: ./bin/twmailer-server
 
 # ---- CLIENT ---- #
 
-client: cmain
+./bin/twmailer-client: ./obj/cmain.o
 	$(CC) $(CFLAGS) $(OBJDIR)/cmain.o $(CLIENT_PATH)/Client.cpp -o $(BINDIR)/twmailer-client
 
 
-cmain: $(CLIENT_PATH)/main.cpp
+./obj/cmain.o: $(CLIENT_PATH)/main.cpp
 	$(CC) $(CFLAGS) -c $(CLIENT_PATH)/main.cpp -o $(OBJDIR)/cmain.o
 
 
 # ---- SERVER ---- #
 
-server: smain Server Ldap ClientHandler Request
-	$(CC) $(CFLAGS) -o $(BINDIR)/twmailer-server $(OBJDIR)/Ldap.o $(OBJDIR)/smain.o $(OBJDIR)/Server.o $(OBJDIR)/ClientHandler.o $(OBJDIR)/Request.o $(LIBS)
+./bin/twmailer-server: ./obj/smain.o ./obj/Server.o ./obj/ClientHandler.o ./obj/Request.o ./obj/Ldap.o
+	$(CC) $(CFLAGS) -o $(BINDIR)/twmailer-server $(OBJDIR)/smain.o $(OBJDIR)/Server.o $(OBJDIR)/ClientHandler.o $(OBJDIR)/Request.o $(OBJDIR)/Ldap.o $(LIBS)
 
-Server:
+./obj/Server.o: $(SERVER_PATH)/Server.cpp
 	$(CC) $(CFLAGS) -c $(SERVER_PATH)/Server.cpp -o $(OBJDIR)/Server.o
 
-ClientHandler:
+./obj/ClientHandler.o: $(SERVER_PATH)/ClientHandler.cpp
 	$(CC) $(CFLAGS) -c $(SERVER_PATH)/ClientHandler.cpp -o $(OBJDIR)/ClientHandler.o
 
-Request:
+./obj/Request.o: $(SERVER_PATH)/Request.cpp
 	$(CC) $(CFLAGS) -c $(SERVER_PATH)/Request.cpp -o $(OBJDIR)/Request.o
 
-smain: $(SERVER_PATH)/main.cpp
+./obj/smain.o: $(SERVER_PATH)/main.cpp
 	$(CC) $(CFLAGS) -c $(SERVER_PATH)/main.cpp -o $(OBJDIR)/smain.o
 
-Ldap:
+./obj/Ldap.o:
 	$(CC) $(CFLAGS) -c $(SERVER_PATH)/Ldap.cpp -o $(OBJDIR)/Ldap.o $(LIBS)
 
 

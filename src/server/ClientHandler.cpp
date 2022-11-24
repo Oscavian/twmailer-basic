@@ -111,13 +111,10 @@ namespace twServer {
                 Ldap ldap = Ldap(request.getUsername(), request.getPassword());
                 int userExists = ldap.checkIfUserExists();
 
-                if(userExists == 0){
-                    //user does not exist
-                    sendBuffer("No user with those credentials\n");
-                } else if(userExists == 1){
+                if(userExists == 1){
                     //user does exist
-                    sendBuffer("Logged in\n");
-                } else if(userExists == -1){
+                    sendBuffer(SERV_OK);
+                } else{
                     sendBuffer(SERV_ERR);
                 }
 

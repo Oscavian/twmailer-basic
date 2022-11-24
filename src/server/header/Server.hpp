@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <cstring>
 #include <iostream>
+#include <thread>
 
 #define CHECKNTHROW(X) ({int __val = (X); \
     if(__val == -1) { \
@@ -24,16 +25,24 @@ namespace twServer {
 
     class Server{
         public:
+            Server() = default;
             Server(int port, std::string mailDir);
             void start();
+            void requestAbort();
+
+            void setPort(int port);
+            void setMailDir(const std::string& dir);
+
+        private:
             void observe();
             void abort();
 
-        private:
-            //std::vector<ClientHandler*> m_clients;
+            std::vector<ClientHandler*> m_clients;
+            std::vector<std::thread*> m_connections;
             int m_port;
             std::string m_mailDir;
             int m_serverSocket;
+            bool m_abortRequested;
 
             
 

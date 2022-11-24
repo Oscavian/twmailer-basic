@@ -1,13 +1,17 @@
 #include "header/Server.hpp"
+#include <thread>
+#include <signal.h>
 
 namespace twServer {
 
     Server::Server(int port, std::string mailDir) {
+
         m_port = port;
         m_mailDir = mailDir;
     }
 
     void Server::start() {
+
         struct sockaddr_in address;
 
         int reuseValue = 1;
@@ -20,18 +24,18 @@ namespace twServer {
 
         //set socket options 1
         CHECKNTHROW(setsockopt(m_serverSocket,
-                        SOL_SOCKET,
-                        SO_REUSEADDR,
-                        &reuseValue,
-                        sizeof(reuseValue)));
-        
+                               SOL_SOCKET,
+                               SO_REUSEADDR,
+                               &reuseValue,
+                               sizeof(reuseValue)));
+
         //set socket options 2
         CHECKNTHROW(setsockopt(m_serverSocket,
-                    SOL_SOCKET,
-                    SO_REUSEPORT,
-                    &reuseValue,
-                    sizeof(reuseValue)));
-        
+                               SOL_SOCKET,
+                               SO_REUSEPORT,
+                               &reuseValue,
+                               sizeof(reuseValue)));
+
         //init address
         memset(&address, 0, sizeof(address)); //zero out bits
         address.sin_family = AF_INET;
@@ -39,7 +43,7 @@ namespace twServer {
         address.sin_port = htons(m_port);
 
         //assign address+port to socket
-        CHECKNTHROW(bind(m_serverSocket, (struct sockaddr*)&address, sizeof(address)));
+        CHECKNTHROW(bind(m_serverSocket, (struct sockaddr *) &address, sizeof(address)));
 
         observe();
     }
@@ -52,14 +56,14 @@ namespace twServer {
 
         CHECKNTHROW(listen(m_serverSocket, 5));
 
-        while(!abortRequested) {
-            
+        while (!abortRequested) {
+
             std::cout << "Waiting for connections...\n";
 
             //accept connection setup
             addrlen = sizeof(struct sockaddr_in);
 
-            if((clientSocket = accept(m_serverSocket, (struct sockaddr*) &cliaddress, &addrlen)) == -1) {
+            if ((clientSocket = accept(m_serverSocket, (struct sockaddr *) &cliaddress, &addrlen)) == -1) {
                 if (abortRequested) {
                     std::cerr << "Accept error after aborted\n";
                 } else {
@@ -75,18 +79,69 @@ namespace twServer {
                     ntohs(cliaddress.sin_port));
 
             //connection established, start communicating...
-            ClientHandler client(std::string(inet_ntoa(cliaddress.sin_addr)), new int(clientSocket), m_mailDir);
-            
-            client.run();
+
+
+            auto client = new ClientHandler(std::string(inet_ntoa(cliaddress.sin_addr)), new int(clientSocket),
+                                            m_mailDir, 1);
+            m_clients.push_back(client);
+
+
+            std::thread* th = new std::thread(&ClientHandler::run, *client);
+
+            m_connections.push_back(th);
+
+            //std::thread(&ClientHandler::run, *client).detach();
+
+            //client.run();
 
             //reset socket
             clientSocket = -1;
-    }
+        }
+
+        abort();
 
     }
 
     void Server::abort() {
+        std::cout << "Server Shutting down!\n";
 
+
+        if (m_serverSocket != -1) {
+            if (shutdown(m_serverSocket, SHUT_RDWR) == -1) {
+                throw std::runtime_error("Nothing to shutdown...");
+            }
+
+            if (close(m_serverSocket) == -1) {
+                throw std::runtime_error("Nothing to close...");
+            }
+            m_serverSocket = -1;
+        }
+
+        for (auto t: m_connections) {
+            (*t).join();
+        }
+
+        for (auto c: m_clients) {
+            delete c;
+        }
+
+
+    }
+
+    void twServer::Server::requestAbort() {
+        m_abortRequested = true;
+    }
+
+    void twServer::Server::setPort(int port) {
+        m_port = port;
+
+        if (port < 0 || port > 65535) {
+            throw std::invalid_argument("Port number out of range!");
+        }
+    }
+
+    void twServer::Server::setMailDir(const std::string& mailDir) {
+        m_mailDir = mailDir;
     }
 
 }

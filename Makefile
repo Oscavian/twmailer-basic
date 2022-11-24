@@ -1,6 +1,6 @@
 CC = g++
-CFLAGS = -g -std=c++17 -Wall -Werror -I /usr/local/include/gtest/
-LIBS = -lldap -llber
+CFLAGS = -g -std=c++17 -Wall -Werror -I /usr/local/include/gtest/ 
+LIBS = -lldap -llber -pthread
 SRCDIR = src
 OBJDIR = obj
 BINDIR = bin

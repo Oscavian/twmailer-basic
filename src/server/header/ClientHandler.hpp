@@ -23,8 +23,8 @@ namespace twServer {
 
     class ClientHandler : ClientBase {
         public:
-            ClientHandler(std::string ipAddr, int *socket, std::string mailDir);
-            ~ClientHandler();
+            ClientHandler(std::string ipAddr, int *socket, std::string mailDir, int clientId);
+            virtual ~ClientHandler();
 
             void start();
             void run();
@@ -45,6 +45,7 @@ namespace twServer {
             std::string m_ipAddr;
             char m_receiveBuffer[BUF];
             std::string m_mailDir;
+            int m_clientId;
         
 
     };

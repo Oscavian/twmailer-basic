@@ -233,10 +233,10 @@ namespace twServer {
 
         //creates file + writes in it
         std::ofstream ofs(filepath);
-        ofs << content.getSender() << "\n"
-            << content.getReceiver() << "\n"
-            << content.getSubject() << "\n"
-            << content.getMessage() << "\n"
+        ofs << "Sender: " << content.getSender() << "\n"
+            << "Receiver: " << content.getReceiver() << "\n"
+            << "Subject: " << content.getSubject() << "\n"
+            << "Message: \n" << content.getMessage() << "\n"
         ; 
         ofs.close();
     }
@@ -272,8 +272,21 @@ namespace twServer {
         if(std::filesystem::is_directory(path) && std::filesystem::exists(path)){
             for (const auto & entry : std::filesystem::directory_iterator(path)){
                 filename = entry.path();
-                filename.erase(0, path.size()+1);
-                response += filename + "\n";
+                std::string temp;
+                std::string subjnr;
+                //open file
+                std::ifstream readFile(filename);
+                //read every line until subject
+                while(!readFile.eof()){
+                    while(getline(readFile, temp)){
+                       if(temp.find("Subject") != std::string::npos){
+                            filename.erase(0, path.size()+1);
+                            response += temp + '\n';
+                            response += " - MsgNr: " + filename + '\n';
+                        }
+                    }
+                }
+                readFile.close();
                 cnt++;
             }
         }

@@ -14,10 +14,12 @@ namespace twServer {
 
             std::string getMethod() const { return m_method; };
             std::string getSender() const { return m_sender; };
+            void setSender(std::string sender) { m_sender = sender; };
             std::string getReceiver() const { return m_receiver; };
             std::string getSubject() const { return m_subject; };
             std::string getMessage() const { return m_body; };
             std::string getUsername() const { return m_username; };
+            void setUsername(std::string username) { m_username = username; };
             std::string getPassword() const {return m_password; };
             std::string getMsgnum() const { return m_msgnum; }; 
             

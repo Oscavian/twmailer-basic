@@ -35,7 +35,7 @@ namespace twClient {
         std::string handleSend();
         std::string handleRead();
         std::string handleDel();
-        std::string handleList();
+        //std::string handleList();
 
     private:
         struct sockaddr_in m_address{};

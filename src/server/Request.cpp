@@ -20,53 +20,51 @@ namespace twServer {
 
         if(m_method == CMD_SEND) {
 
-            if(m_params.size() < 5){
+            //SEND receiver subject msg
+            if(m_params.size() < 4){
                 return;
             }
 
-            //SENDER
-            m_sender = m_params.at(1).substr(0, 8);
-
             //RECEIVER
-            m_receiver = m_params.at(2).substr(0, 8);
+            m_receiver = m_params.at(1).substr(0, 8);
 
             //SUBJECT
-            m_subject = m_params.at(3).substr(0, 80);
+            m_subject = m_params.at(2).substr(0, 80);
 
             //MESSAGE BODY
-            for(auto it = m_params.begin() + 4; *it != "."; it++) {
+            for(auto it = m_params.begin() + 3; *it != "."; it++) {
                 m_body.append(*it + '\n');
             }
 
         } else if(m_method == CMD_LIST) {
             
-            if(m_params.size() < 2){
+            //LIST
+            if(m_params.size() < 1){
                 return; 
             }
-
-            m_username = m_params.at(1).substr(0, 8);
 
         } else if(m_method == CMD_READ) {
             
-            if(m_params.size() < 3){
+            //READ msgNr
+            if(m_params.size() < 2){
                 return; 
             }
 
-            m_username = m_params.at(1).substr(0, 8);
-
-            m_msgnum = m_params.at(2);
+            m_msgnum = m_params.at(1);
 
         } else if(m_method == CMD_DEL) {
             
-            if(m_params.size() < 3){
+            //DEL msgNr
+            if(m_params.size() < 2){
                 return; 
             }
 
-            m_username = m_params.at(1).substr(0, 8);
-            m_msgnum = m_params.at(2);
+            m_msgnum = m_params.at(1);
             
         } else if(m_method == CMD_LOGIN){
-            if(m_params.size() < 2){
+
+            //LOGIN username pw
+            if(m_params.size() < 3){
                 return;
             }
 

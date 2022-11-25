@@ -63,7 +63,7 @@ namespace twClient {
 
             if(command == CMD_LOGIN){
                 message = command + "\n" + handleLogin();
-                
+
             }else if(command == CMD_SEND){
                 message = command + "\n" + handleSend();
             
@@ -71,7 +71,7 @@ namespace twClient {
                 message = command + "\n" + handleRead();
 
             } else if(command == CMD_LIST) {
-                message = command + "\n" + handleList();
+                message = command;
 
             } else if(command == CMD_DEL) {
                 message = command + "\n" + handleDel();
@@ -81,11 +81,15 @@ namespace twClient {
                 isQuit = true; 
             } else if(command == "?" || command == "HELP") {
                 std::cout << "Available commands:\n"
+                          << "LOGIN - login with username and password\n"
+                          << "HELP - display this list\n"
+                          << "QUIT - end connection to the server\n\n"
+                          << "For logged in users:\n"
                           << "SEND - send a mail to a recipients mailbox\n"
                           << "READ - read a mail from a users mailbox\n"
                           << "LIST - list a users mailbox items\n"
-                          << "DEL - delete a mail\n"
-                          << "HELP - display this list\n";
+                          << "DEL - delete a mail\n";
+                          
                 continue;
             } else {
                 std::cout << "Invalid command. Type '?' for help.\n";
@@ -126,15 +130,9 @@ namespace twClient {
     }
 
     std::string Client::handleSend() {
-        std::string sender;
         std::string receiver;
         std::string subject;
         std::string message;
-        
-        while(sender.empty()){
-            std::cout << "SENDER >> ";
-            std::getline(std::cin, sender);
-        }
 
         while(receiver.empty()){
             std::cout << "RECEIVER >> ";
@@ -154,43 +152,26 @@ namespace twClient {
             std::cout << ">> ";
         } while (line.length() == 0 || !((line.length() == 1) && line.at(0) == '.'));
 
-        return sender + "\n" + receiver + "\n" + subject + "\n" + message;
+        return receiver + "\n" + subject + "\n" + message;
 
     }
 
     std::string Client::handleRead() {
-        std::string username;
         std::string msgnr;
-
-        std::cout << "USERNAME >> ";
-        std::getline(std::cin, username);
 
         std::cout << "MSGNR >> ";
         std::getline(std::cin, msgnr);
         
-        return username + "\n" + msgnr + "\n";
-    }
-
-    std::string Client::handleList() {
-        std::string username;
-
-        std::cout << "USERNAME >> ";
-        std::getline(std::cin, username);
-        
-        return username + "\n";
+        return msgnr + "\n";
     }
 
     std::string Client::handleDel() {
-        std::string username;
         std::string msgnr;
-
-        std::cout << "USERNAME >> ";
-        std::getline(std::cin, username);
 
         std::cout << "MSGNR >> ";
         std::getline(std::cin, msgnr);
 
-        return username + "\n" + msgnr + "\n";
+        return msgnr + "\n";
     }
 
     int Client::getch(){

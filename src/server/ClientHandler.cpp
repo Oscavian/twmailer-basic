@@ -25,6 +25,7 @@ namespace twServer {
     }
 
     void ClientHandler::run() {
+        std::string user = "";
         int size;
         sendBuffer("Welcome to my server! Please enter your Commands...\n");
 
@@ -38,7 +39,7 @@ namespace twServer {
             
             Request request = Request(std::istringstream(std::string(m_receiveBuffer)));
 
-            std::string path = m_mailDir + "/" + request.getUsername();
+            std::string path = m_mailDir + "/" + user;
 
             if(request.getMethod().empty()){
                 sendBuffer(SERV_ERR);
@@ -47,6 +48,12 @@ namespace twServer {
 
             //here parsing client input
             if(request.getMethod() == CMD_SEND){
+                if(user.empty()){
+                    sendBuffer(SERV_ERR);
+                    std::cerr << "Error: User is not logged in.\n";
+                    continue;
+                }
+                request.setSender(user);
 
                 std::cout << "Message received: \n" << request.getMessage() << "from user: " << request.getSender() << " to " << request.getReceiver() << "\n\n";
 
@@ -67,6 +74,12 @@ namespace twServer {
                 sendBuffer(SERV_OK);
 
             } else if(request.getMethod() == CMD_LIST){
+                if(user.empty()){
+                    sendBuffer(SERV_ERR);
+                    std::cerr << "Error: User is not logged in.\n";
+                    continue;
+                }
+                request.setUsername(user);
                 
                 if(request.getUsername().empty()){
                     std::cerr << "Error: Username not specified!\n";
@@ -78,6 +91,12 @@ namespace twServer {
                 listMessages(path);
 
             } else if(request.getMethod() == CMD_READ){
+                if(user.empty()){
+                    sendBuffer(SERV_ERR);
+                    std::cerr << "Error: User is not logged in.\n";
+                    continue;
+                }
+                request.setUsername(user);
                 if(request.getMsgnum().empty()){
                     sendBuffer(SERV_ERR);
                     std::cerr << "Error: Msgnum not specified!\n";
@@ -88,6 +107,12 @@ namespace twServer {
                 readMessage(path, request.getMsgnum());
 
             } else if(request.getMethod() == CMD_DEL) {
+                if(user.empty()){
+                    sendBuffer(SERV_ERR);
+                    std::cerr << "Error: User is not logged in.\n";
+                    continue;
+                }
+                request.setUsername(user);
                 if(request.getMsgnum().empty()){
                     sendBuffer(SERV_ERR);
                     std::cerr << "Error: Msgnum not specified!\n";
@@ -114,6 +139,7 @@ namespace twServer {
                 if(userExists == 1){
                     //user does exist
                     sendBuffer(SERV_OK);
+                    user = request.getUsername();
                 } else{
                     sendBuffer(SERV_ERR);
                 }

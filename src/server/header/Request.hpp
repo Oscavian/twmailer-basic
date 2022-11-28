@@ -12,6 +12,7 @@ namespace twServer {
         public:
             Request(std::istringstream request);
 
+            //methods for reading created requets object
             std::string getMethod() const { return m_method; };
             std::string getSender() const { return m_sender; };
             void setSender(std::string sender) { m_sender = sender; };

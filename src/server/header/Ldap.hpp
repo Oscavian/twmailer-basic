@@ -24,6 +24,7 @@ namespace twServer{
             char ldapBindUser[256]; 
             char ldapBindPassword[256];
         
+            //mostly getters for important ldap parameters
             std::string getUsername() const {return m_username; };
             std::string getPassword() const {return m_password; };
             const char* getLdapURL() const {return ldapURL; };
@@ -37,6 +38,7 @@ namespace twServer{
 
         private:
 
+            //important ldap parameters
             const char *ldapURL = "ldap://ldap.technikum-wien.at:389";
             const int ldapVersion = LDAP_VERSION3;
             const char *ldapSearchBaseDomainComponent = "dc=technikum-wien,dc=at";

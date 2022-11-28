@@ -9,11 +9,11 @@ int main(int argc, char **argv) {
     std::string ip;
 
     try {
+        //ip and port required
         if (args.size() != 3) {
             throw std::invalid_argument("Invalid arguments");
         }
 
-        //TODO: add validation
         ip = args[1];
         port = std::stoi(args[2]);
 
@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
     }
 
     try {
+        //sets up the client with all necessary parameters
         twClient::Client client(ip, port);
         client.start();
     } catch (const std::exception &e) {

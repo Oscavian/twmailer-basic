@@ -21,6 +21,7 @@ int main(int argc, char** argv){
     std::vector<std::string> args(argv, argv + argc);
 
     try {
+        //port and directory necessary
         if (args.size() != 3) {
             throw std::invalid_argument("Invalid arguments");
         }
@@ -38,7 +39,7 @@ int main(int argc, char** argv){
     server.setPort(port);
 
     try {
-        
+        //sets off server functionality
         server.start();
 
     } catch (const std::exception &e) {

@@ -10,6 +10,7 @@ namespace twServer {
         
         std::string line;
 
+        //getting all parameters from buffer
         while(getline(request, line, '\n')){
             m_params.push_back(line);
         }
@@ -17,6 +18,7 @@ namespace twServer {
         // METHOD
         m_method = m_params.at(0);
 
+        //parsing parameters sent for easier and cleaner access to information later on
 
         if(m_method == CMD_SEND) {
 
@@ -25,20 +27,20 @@ namespace twServer {
                 return;
             }
 
-            //RECEIVER
+            //RECEIVER - control length
             m_receiver = m_params.at(1).substr(0, 8);
 
-            //SUBJECT
+            //SUBJECT - control length
             m_subject = m_params.at(2).substr(0, 80);
 
-            //MESSAGE BODY
+            //MESSAGE BODY - read all from third param to .
             for(auto it = m_params.begin() + 3; *it != "."; it++) {
                 m_body.append(*it + '\n');
             }
 
         } else if(m_method == CMD_LIST) {
             
-            //LIST
+            //LIST - does not need username as it is automatically set when logged in
             if(m_params.size() < 1){
                 return; 
             }
@@ -68,6 +70,7 @@ namespace twServer {
                 return;
             }
 
+            //control length of username
             m_username = m_params.at(1).substr(0, 8);
 
             m_password = m_params.at(2);

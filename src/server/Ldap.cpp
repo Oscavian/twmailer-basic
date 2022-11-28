@@ -1,4 +1,4 @@
-#define Ldap_DEPRECATED 1
+#define Ldap_DEPRECATED 1 //errors without this header
 #include "header/Ldap.hpp"
 #include "../share/protocol.h"
 #include <ldap.h>
@@ -13,8 +13,11 @@ namespace twServer{
 
     Ldap::~Ldap(){}
 
+    //printing the excat information found in the query
     void Ldap::printSearchResult(LDAP *ldapHandle, LDAPMessage *searchResult){
         LDAPMessage *searchResultEntry;
+
+        //iterating through results to print DN
         for (searchResultEntry = ldap_first_entry(ldapHandle, searchResult);
             searchResultEntry != NULL;
             searchResultEntry = ldap_next_entry(ldapHandle, searchResultEntry)){
@@ -22,6 +25,8 @@ namespace twServer{
             std::cout << "DN: " << ldap_get_dn(ldapHandle, searchResultEntry) << "\n";
 
             BerElement *ber;
+
+            //iterating through results to get exact information
             char *searchResultEntryAttribute;
             for (searchResultEntryAttribute = ldap_first_attribute(ldapHandle, searchResultEntry, &ber);
                 searchResultEntryAttribute != NULL;
@@ -45,10 +50,12 @@ namespace twServer{
         }
     }
 
+    //performs search for user with given credentials and returns 1 upon finding a matching entry
     int Ldap::checkIfUserExists(){
         int userExists = 0;
 
-        //setting up data
+        //setting up data for search
+        //concrete user to look for
         std::string fullUserName = "uid=" + getUsername() + ",ou=people,dc=technikum-wien,dc=at";
         strcpy(ldapBindUser, fullUserName.c_str());
         strcpy(ldapBindPassword, getPassword().c_str());
@@ -67,7 +74,7 @@ namespace twServer{
             std::cerr << "Error: ldap_init failed\n";
             return -1;
         }
-        std::cout << "Connected to LDAP server\n";
+        std::cout << "LDAP server initialized\n";
 
         //set version options
         rc = ldap_set_option(ldapHandle, LDAP_OPT_PROTOCOL_VERSION, &ldapVersion);             
@@ -84,6 +91,7 @@ namespace twServer{
             ldap_unbind_ext_s(ldapHandle, NULL, NULL);
             return -1;
         }
+        std::cout << "Connected to LDAP server\n";
 
         //bind credentials
         BerValue bindCredentials;
@@ -120,9 +128,10 @@ namespace twServer{
             return -1;
         }
 
-        //zum Überprüfen
+        //to see found results, only for server and debugging
         Ldap::printSearchResult(ldapHandle, searchResult);
 
+        //entry was found, user with matching credetials exists
         if(ldap_count_entries(ldapHandle, searchResult) > 0){
             userExists = 1;
         }

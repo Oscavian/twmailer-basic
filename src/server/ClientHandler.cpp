@@ -38,16 +38,20 @@ namespace twServer {
                 break;
             }
             
+            //request object for parsing all requests for easier readability
             Request request = Request(std::istringstream(std::string(m_receiveBuffer)));
 
+            //setting path
             std::string path = m_mailDir + "/" + user;
 
+            //method necessary
             if(request.getMethod().empty()){
                 sendBuffer(SERV_ERR);
                 return;
             }
 
             //here parsing client input
+            //Options SEND, LIST, READ and DEL only available afetr logging in
             if(request.getMethod() == CMD_SEND){
                 if(user.empty()){
                     sendBuffer(SERV_ERR);
@@ -89,6 +93,7 @@ namespace twServer {
                 }
 
                 std::cout << "List messages of user " << request.getUsername() << "\n\n";
+                //sends list of message-subjects + numbers
                 listMessages(path);
 
             } else if(request.getMethod() == CMD_READ){
@@ -105,6 +110,7 @@ namespace twServer {
                 }
 
                 std::cout << "Read message #" << request.getMsgnum() << " of user " << request.getUsername() << "\n\n";
+                //opens amd reads requested msg
                 readMessage(path, request.getMsgnum());
 
             } else if(request.getMethod() == CMD_DEL) {
@@ -120,6 +126,7 @@ namespace twServer {
                     continue;
                 }
                 std::cout << "Delete message #" << request.getMsgnum() << " of user " << request.getUsername() << "\n\n";
+                //removes requested msg
                 deleteMessage(path, request.getMsgnum());
 
             } else if(request.getMethod() == CMD_LOGIN){
@@ -134,7 +141,9 @@ namespace twServer {
                 }
                 std::cout << "Trying to log in as user " << request.getUsername() << "\n\n";
 
+                //sets up ldap connection for logging in
                 Ldap ldap = Ldap(request.getUsername(), request.getPassword());
+                //checks the typed in credentials
                 int userExists = ldap.checkIfUserExists();
 
                 if(userExists == 1){
@@ -162,6 +171,7 @@ namespace twServer {
     }
 
     void ClientHandler::abort() {
+        //releasing resources of the specific connection
         std::cout << "Bye Bye Client!\n";
 
         if(*m_socket != -1) {
@@ -230,6 +240,7 @@ namespace twServer {
         //else only file
         std::filesystem::path filepath{path};
         filepath /= ID;
+        //does not throw error when directory already exists
         std::filesystem::create_directories(filepath.parent_path());
 
         //creates file + writes in it
@@ -239,6 +250,7 @@ namespace twServer {
             << "Subject: " << content.getSubject() << "\n"
             << "Message: \n" << content.getMessage() << "\n"
         ; 
+        //file is closed
         ofs.close();
     }
 
@@ -247,17 +259,22 @@ namespace twServer {
         int highestNr = 1;
         std::vector<int> ids;
         
+        //iterates through directory and collects all filenames as ints in vector ids
         for (const auto & entry : std::filesystem::directory_iterator(path)){
            filename = entry.path();
            filename.erase(0, path.size()+1);
            ids.push_back(stoi(filename));
         }
         if(ids.size() == 0){
+            //if there are no messages, return ID 1
             return std::to_string(1);
         }
+        //sort ids by size
         std::sort(ids.begin(), ids.end());
 
+        //get new hightest id by looking at last int in ids and increment it
         highestNr = ids.at(ids.size()-1) + 1;
+        //return it as string for easier usage
         std::string newID = std::to_string(highestNr);
 
         return newID;
@@ -269,19 +286,20 @@ namespace twServer {
         std::string response = "";
         size_t size = response.size();
         int cnt = 0; 
-
+        //open directory and iterate through
         if(std::filesystem::is_directory(path) && std::filesystem::exists(path)){
             for (const auto & entry : std::filesystem::directory_iterator(path)){
                 filename = entry.path();
                 std::string temp;
-                std::string subjnr;
                 //open file
                 std::ifstream readFile(filename);
                 //read every line until subject
                 while(!readFile.eof()){
                     while(getline(readFile, temp)){
+                        //if Subject is found
                        if(temp.find("Subject") != std::string::npos){
                             filename.erase(0, path.size()+1);
+                            //add subject + filename to response
                             response += temp + '\n';
                             response += " - MsgNr: " + filename + '\n';
                         }
@@ -292,11 +310,14 @@ namespace twServer {
             }
         }
 
+        //add counter of responsed to start of string
         response = std::to_string(cnt) + "\n" + response;
 
         if(response.size() > size){
+            //send collected response to client 
             sendBuffer(response.c_str());
         }else{
+            //if no msg in path, send 0
             sendBuffer("0");
         }
     }
@@ -307,9 +328,11 @@ namespace twServer {
         std::string m_filename = "";
         std::string content = "Message: \n";
 
+        //open directory and iterate through
         if(std::filesystem::is_directory(path) && std::filesystem::exists(path)){
             for (const auto & entry : std::filesystem::directory_iterator(path)){
                 temp_filename = entry.path();
+                //get filename without path information for comparison with given filename
                 temp_filename.erase(0, path.size()+1);
                 if(stoi(temp_filename) == num){
                     std::cout << "Message found\n";
@@ -332,7 +355,7 @@ namespace twServer {
             readFile.close();
             
             content = SERV_OK + '\n' + content;
-
+            //send content of founf msg + OK to client
             sendBuffer(content.c_str());
         }else{
             //if file has not been found
@@ -345,6 +368,7 @@ namespace twServer {
         std::string temp_filename = "";
         std::string m_filename = "";
 
+        //similar mechanic to read
         if(std::filesystem::is_directory(path) && std::filesystem::exists(path)){
             for (const auto & entry : std::filesystem::directory_iterator(path)){
                 temp_filename = entry.path();
@@ -356,7 +380,9 @@ namespace twServer {
                 }
             }
         }
+        //if file has been found
         if(m_filename.size() > 0){
+            //get complete path of file and remove it
             const char* filepath = (path + "/" + m_filename).c_str();
             if(remove(filepath) != 0){
                 std::cerr << "Error deleting message\n";

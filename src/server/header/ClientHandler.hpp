@@ -26,12 +26,16 @@ namespace twServer {
             ClientHandler(std::string ipAddr, int *socket, std::string mailDir, int clientId);
             virtual ~ClientHandler();
 
+            //basic methods for interacting with client
             void start();
             void run();
             bool sendBuffer(const char* buffer);
             int receiveBuffer();
+
+            //method for naming new messages
             std::string getNextID(std::string user, std::string path);
 
+            //methods for reacting to client request
             void saveMessage(Request content, std::string path);
             void listMessages(std::string path);
             void readMessage(std::string path, std::string msgNum);

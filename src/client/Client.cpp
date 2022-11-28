@@ -43,7 +43,7 @@ namespace twClient {
             throw std::runtime_error(msg);
         }
 
-
+        //wait for SERV_OK
         receiveBuffer();
 
         run();
@@ -57,10 +57,11 @@ namespace twClient {
         std::string command;
 
         do {
-            
+            //getting command to perform
             std::cout << "CMD >> ";
             std::getline(std::cin, command);
 
+            //arraging message to be sent to server depending on command
             if(command == CMD_LOGIN){
                 message = command + "\n" + handleLogin();
 
@@ -79,7 +80,8 @@ namespace twClient {
             } else if(command == CMD_QUIT) {
                 message = command + "\n";
                 isQuit = true; 
-            } else if(command == "?" || command == "HELP") {
+            } //print help menu for question or help command
+            else if(command == "?" || command == "HELP") {
                 std::cout << "Available commands:\n"
                           << "LOGIN - login with username and password\n"
                           << "HELP - display this list\n"
@@ -91,7 +93,8 @@ namespace twClient {
                           << "DEL - delete a mail\n";
                           
                 continue;
-            } else {
+            } //unknown command
+            else {
                 std::cout << "Invalid command. Type '?' for help.\n";
                 continue;
             }
@@ -101,16 +104,18 @@ namespace twClient {
                 if (!sendBuffer(message.c_str())) {
                     throw std::runtime_error("Send failed, abort...");
                 }   
+                //shows client what exactely was sent to server
                 std::cout << "Message sent! Message:\n-----\n" << message << "\n-----\n";
+                //deletes message for next use
                 message.clear();
-
+                //waits on server reaction
                 receiveBuffer();
             } else {
                 std::cout << "Message is empty!\n";
             }
 
         } while (!isQuit);
-
+        //command quit stops client
         abort();
 
     }
@@ -123,6 +128,7 @@ namespace twClient {
             std::cout << "USERNAME: ";
             std::getline(std::cin, username);
         }
+        //special function for getting password to hide while typing
         password = getpass();
 
         return username + "\n" + password;
@@ -134,6 +140,7 @@ namespace twClient {
         std::string subject;
         std::string message;
 
+        //get all necessary parameters for sending a message
         while(receiver.empty()){
             std::cout << "RECEIVER >> ";
             std::getline(std::cin, receiver);
@@ -146,6 +153,7 @@ namespace twClient {
         
         std::string line;
         
+        //reads message until . newline
         do {
             std::getline(std::cin, line);
             message.append(line + "\n");
@@ -155,6 +163,8 @@ namespace twClient {
         return receiver + "\n" + subject + "\n" + message;
 
     }
+
+    //for read and delete only msg numbers are important as user is automatically set after logging in
 
     std::string Client::handleRead() {
         std::string msgnr;
@@ -227,10 +237,12 @@ namespace twClient {
     }
 
     bool Client::sendBuffer(const char *buffer) {
+        //sends buffer to server
         return send(m_socket, buffer, strlen(buffer), 0) != -1;
     }
 
     int Client::receiveBuffer() {
+        //reveives msg from server
         int size = recv(m_socket, m_recvBuffer, BUF - 1, 0);
 
         if (size == -1) {
@@ -247,6 +259,7 @@ namespace twClient {
 
 
     void Client::abort() {
+        //shuts down client and releases all resources
         std::cout << "Bye Bye!\n";
 
         if (m_socket != -1) {

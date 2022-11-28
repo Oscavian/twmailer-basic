@@ -45,6 +45,7 @@ namespace twServer {
         //assign address+port to socket
         CHECKNTHROW(bind(m_serverSocket, (struct sockaddr *) &address, sizeof(address)));
 
+        //listening for incoming connections and accepting
         observe();
     }
 
@@ -80,19 +81,15 @@ namespace twServer {
 
             //connection established, start communicating...
 
-
+            //ClientHandler used for client communication for cleaner code
             auto client = new ClientHandler(std::string(inet_ntoa(cliaddress.sin_addr)), new int(clientSocket),
                                             m_mailDir, 1);
             m_clients.push_back(client);
 
-
+            //new thread for every connection
             std::thread* th = new std::thread(&ClientHandler::run, *client);
 
             m_connections.push_back(th);
-
-            //std::thread(&ClientHandler::run, *client).detach();
-
-            //client.run();
 
             //reset socket
             clientSocket = -1;
@@ -103,6 +100,7 @@ namespace twServer {
     }
 
     void Server::abort() {
+        //shutting down server and releasing all resources
         std::cout << "Server Shutting down!\n";
 
 
@@ -116,7 +114,7 @@ namespace twServer {
             }
             m_serverSocket = -1;
         }
-
+        //waiting for all remaining threads to join
         for (auto t: m_connections) {
             (*t).join();
         }
@@ -135,6 +133,7 @@ namespace twServer {
     void twServer::Server::setPort(int port) {
         m_port = port;
 
+        //validate port
         if (port < 0 || port > 65535) {
             throw std::invalid_argument("Port number out of range!");
         }

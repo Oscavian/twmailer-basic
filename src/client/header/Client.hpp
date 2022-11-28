@@ -21,6 +21,7 @@ namespace twClient {
         Client(const std::string& ip, int port);
         ~Client();
 
+        //basic methods
         void start();
         void run();
         void abort();
@@ -28,14 +29,15 @@ namespace twClient {
         bool sendBuffer(const char *buffer);
         int receiveBuffer();
 
+        //methods for getting/hiding login password
         int getch();
         std::string getpass();
 
+        //methods handling the parsing of options
         std::string handleLogin();
         std::string handleSend();
         std::string handleRead();
         std::string handleDel();
-        //std::string handleList();
 
     private:
         struct sockaddr_in m_address{};

@@ -18,26 +18,34 @@
 namespace twClient {
     class Client : ClientBase {
     public:
-        Client(const std::string& ip, int port);
+        Client(const std::string &ip, int port);
+
         ~Client();
 
         //basic methods
-        void start();
-        void run();
-        void abort();
+        void start() override;
 
-        bool sendBuffer(const char *buffer);
-        int receiveBuffer();
+        void run() override;
+
+        void abort() override;
+
+        bool sendBuffer(const char *buffer) override;
+
+        int receiveBuffer() override;
 
         //methods for getting/hiding login password
-        int getch();
-        std::string getpass();
+        static int getch();
+
+        static std::string getpass();
 
         //methods handling the parsing of options
         std::string handleLogin();
+
         std::string handleSend();
-        std::string handleRead();
-        std::string handleDel();
+
+        static std::string handleRead();
+
+        static std::string handleDel();
 
     private:
         struct sockaddr_in m_address{};

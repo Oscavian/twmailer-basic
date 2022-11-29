@@ -7,11 +7,11 @@
 
 namespace twServer {
     twServer::Request::Request(std::istringstream request) {
-        
+
         std::string line;
 
         //getting all parameters from buffer
-        while(getline(request, line, '\n')){
+        while (getline(request, line, '\n')) {
             m_params.push_back(line);
         }
 
@@ -20,10 +20,10 @@ namespace twServer {
 
         //parsing parameters sent for easier and cleaner access to information later on
 
-        if(m_method == CMD_SEND) {
+        if (m_method == CMD_SEND) {
 
             //SEND receiver subject msg
-            if(m_params.size() < 4){
+            if (m_params.size() < 4) {
                 return;
             }
 
@@ -34,39 +34,39 @@ namespace twServer {
             m_subject = m_params.at(2).substr(0, 80);
 
             //MESSAGE BODY - read all from third param to .
-            for(auto it = m_params.begin() + 3; *it != "."; it++) {
+            for (auto it = m_params.begin() + 3; *it != "."; it++) {
                 m_body.append(*it + '\n');
             }
 
-        } else if(m_method == CMD_LIST) {
-            
+        } else if (m_method == CMD_LIST) {
+
             //LIST - does not need username as it is automatically set when logged in
-            if(m_params.size() < 1){
-                return; 
+            if (m_params.size() < 1) {
+                return;
             }
 
-        } else if(m_method == CMD_READ) {
-            
+        } else if (m_method == CMD_READ) {
+
             //READ msgNr
-            if(m_params.size() < 2){
-                return; 
+            if (m_params.size() < 2) {
+                return;
             }
 
             m_msgnum = m_params.at(1);
 
-        } else if(m_method == CMD_DEL) {
-            
+        } else if (m_method == CMD_DEL) {
+
             //DEL msgNr
-            if(m_params.size() < 2){
-                return; 
+            if (m_params.size() < 2) {
+                return;
             }
 
             m_msgnum = m_params.at(1);
-            
-        } else if(m_method == CMD_LOGIN){
+
+        } else if (m_method == CMD_LOGIN) {
 
             //LOGIN username pw
-            if(m_params.size() < 3){
+            if (m_params.size() < 3) {
                 return;
             }
 
@@ -76,7 +76,7 @@ namespace twServer {
             m_password = m_params.at(2);
         }
 
-        
+
     }
 
     std::string Request::toString() const {

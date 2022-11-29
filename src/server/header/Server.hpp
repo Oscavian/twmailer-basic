@@ -23,29 +23,29 @@
 
 namespace twServer {
 
-    class Server{
-        public:
-            //basic methods for setting up server
-            Server() = default;
-            Server(int port, std::string mailDir);
-            void start();
-            void requestAbort();
+    class Server {
+    public:
+        //basic methods for setting up server
+        Server() = default;
 
-            void setPort(int port);
-            void setMailDir(const std::string& dir);
+        void start();
 
-        private:
-            void observe();
-            void abort();
+        void requestAbort();
 
-            std::vector<ClientHandler*> m_clients;
-            std::vector<std::thread*> m_connections;
-            int m_port;
-            std::string m_mailDir;
-            int m_serverSocket;
-            bool m_abortRequested;
+        void setPort(int port);
 
-            
+        void setMailDir(const std::string &dir);
+
+    private:
+        void observe();
+
+        void abort();
+
+        std::vector<ClientHandler *> m_clients;
+        int m_port;
+        std::string m_mailDir;
+        int m_serverSocket;
+
 
     };
 }

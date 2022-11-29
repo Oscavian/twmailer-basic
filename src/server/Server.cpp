@@ -4,12 +4,6 @@
 
 namespace twServer {
 
-    Server::Server(int port, std::string mailDir) {
-
-        m_port = port;
-        m_mailDir = mailDir;
-    }
-
     void Server::start() {
 
         struct sockaddr_in address;
@@ -50,14 +44,13 @@ namespace twServer {
     }
 
     void Server::observe() {
-        bool abortRequested = false;
         socklen_t addrlen;
         struct sockaddr_in cliaddress;
         int clientSocket;
-
+        int currentId = 0;
         CHECKNTHROW(listen(m_serverSocket, 5));
 
-        while (!abortRequested) {
+        while (true) {
 
             std::cout << "Waiting for connections...\n";
 
@@ -65,17 +58,14 @@ namespace twServer {
             addrlen = sizeof(struct sockaddr_in);
 
             if ((clientSocket = accept(m_serverSocket, (struct sockaddr *) &cliaddress, &addrlen)) == -1) {
-                if (abortRequested) {
-                    std::cerr << "Accept error after aborted\n";
-                } else {
-                    std::cerr << "Accept error.\n";
-                }
+                std::cerr << "Accept error.\n";
                 break;
             }
 
 
             //start client
-            fprintf(stdout, "Client connected from %s:%d...\n",
+            fprintf(stdout, "Client %d connected from %s:%d...\n",
+                    currentId,
                     inet_ntoa(cliaddress.sin_addr),
                     ntohs(cliaddress.sin_port));
 
@@ -83,20 +73,15 @@ namespace twServer {
 
             //ClientHandler used for client communication for cleaner code
             auto client = new ClientHandler(std::string(inet_ntoa(cliaddress.sin_addr)), new int(clientSocket),
-                                            m_mailDir, 1);
+                                            m_mailDir, currentId);
             m_clients.push_back(client);
-
+            currentId++;
             //new thread for every connection
-            std::thread* th = new std::thread(&ClientHandler::run, *client);
-
-            m_connections.push_back(th);
+            std::thread(&ClientHandler::run, *client).detach();
 
             //reset socket
             clientSocket = -1;
         }
-
-        abort();
-
     }
 
     void Server::abort() {
@@ -114,20 +99,14 @@ namespace twServer {
             }
             m_serverSocket = -1;
         }
-        //waiting for all remaining threads to join
-        for (auto t: m_connections) {
-            (*t).join();
-        }
 
         for (auto c: m_clients) {
             delete c;
         }
-
-
     }
 
     void twServer::Server::requestAbort() {
-        m_abortRequested = true;
+        abort();
     }
 
     void twServer::Server::setPort(int port) {
@@ -139,7 +118,7 @@ namespace twServer {
         }
     }
 
-    void twServer::Server::setMailDir(const std::string& mailDir) {
+    void twServer::Server::setMailDir(const std::string &mailDir) {
         m_mailDir = mailDir;
     }
 

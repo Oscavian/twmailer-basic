@@ -4,18 +4,19 @@
 #include "header/Ldap.hpp"
 #include <sstream>
 #include <filesystem>
-#include <fstream>
+#include <utility>
 #include <vector>
 #include <bits/stdc++.h>
 
 namespace twServer {
-    ClientHandler::ClientHandler(std::string ipAddr, int *socket, std::string mailDir, int clientId){
-        m_ipAddr = ipAddr;
+    std::mutex ClientHandler::m_fileMutex;
+
+    ClientHandler::ClientHandler(std::string ipAddr, int *socket, std::string mailDir, int clientId) {
+        m_ipAddr = std::move(ipAddr);
         m_socket = socket;
-        m_mailDir = mailDir;
-        m_abortRequested = false;
+        m_mailDir = std::move(mailDir);
         m_clientId = clientId;
-    }   
+    }
 
     ClientHandler::~ClientHandler() {
         delete m_socket;
@@ -26,7 +27,7 @@ namespace twServer {
     }
 
     void ClientHandler::run() {
-        std::string user = "";
+        std::string user;
         int size;
         sendBuffer("Welcome to my server! Please enter your Commands...\n");
 
@@ -34,10 +35,10 @@ namespace twServer {
             //receive data
             size = receiveBuffer();
 
-            if(size == 0 || size == -1){
+            if (size == 0 || size == -1) {
                 break;
             }
-            
+
             //request object for parsing all requests for easier readability
             Request request = Request(std::istringstream(std::string(m_receiveBuffer)));
 
@@ -45,26 +46,27 @@ namespace twServer {
             std::string path = m_mailDir + "/" + user;
 
             //method necessary
-            if(request.getMethod().empty()){
+            if (request.getMethod().empty()) {
                 sendBuffer(SERV_ERR);
                 return;
             }
 
             //here parsing client input
             //Options SEND, LIST, READ and DEL only available afetr logging in
-            if(request.getMethod() == CMD_SEND){
-                if(user.empty()){
+            if (request.getMethod() == CMD_SEND) {
+                if (user.empty()) {
                     sendBuffer(SERV_ERR);
-                    std::cerr << "Error: User is not logged in.\n";
+                    std::cerr << m_clientId << ": Error: User is not logged in.\n";
                     continue;
                 }
                 request.setSender(user);
 
-                std::cout << "Message received: \n" << request.getMessage() << "from user: " << request.getSender() << " to " << request.getReceiver() << "\n\n";
+                std::cout << m_clientId << ": Message received: \n" << request.getMessage() << "from user: "
+                          << request.getSender() << " to " << request.getReceiver() << "\n\n";
 
-                if(request.getReceiver().empty() || request.getSender().empty()) {
+                if (request.getReceiver().empty() || request.getSender().empty()) {
                     sendBuffer(SERV_ERR);
-                    std::cerr << "Error: Request body incomplete - nothing saved.\n";
+                    std::cerr << m_clientId << ": Error: Request body incomplete - nothing saved.\n";
                     continue;
                 }
 
@@ -74,105 +76,107 @@ namespace twServer {
                     m_fileMutex.lock();
                     saveMessage(request, path);
                     m_fileMutex.unlock();
-                } catch(std::filesystem::filesystem_error & e){
+                } catch (std::filesystem::filesystem_error &e) {
                     std::cerr << e.what() << std::endl;
                 }
                 //send confirmation msg
                 sendBuffer(SERV_OK);
 
-            } else if(request.getMethod() == CMD_LIST){
-                if(user.empty()){
+            } else if (request.getMethod() == CMD_LIST) {
+                if (user.empty()) {
                     sendBuffer(SERV_ERR);
-                    std::cerr << "Error: User is not logged in.\n";
+                    std::cerr << m_clientId << ": Error: User is not logged in.\n";
                     continue;
                 }
                 request.setUsername(user);
-                
-                if(request.getUsername().empty()){
-                    std::cerr << "Error: Username not specified!\n";
+
+                if (request.getUsername().empty()) {
+                    std::cerr << m_clientId << ": Error: Username not specified!\n";
                     sendBuffer(SERV_ERR);
                     continue;
                 }
 
-                std::cout << "List messages of user " << request.getUsername() << "\n\n";
+                std::cout << m_clientId << ": List messages of user " << request.getUsername() << "\n\n";
                 //sends list of message-subjects + numbers
                 m_fileMutex.lock();
                 listMessages(path);
                 m_fileMutex.unlock();
 
-            } else if(request.getMethod() == CMD_READ){
-                if(user.empty()){
+            } else if (request.getMethod() == CMD_READ) {
+                if (user.empty()) {
                     sendBuffer(SERV_ERR);
-                    std::cerr << "Error: User is not logged in.\n";
+                    std::cerr << m_clientId << ": Error: User is not logged in.\n";
                     continue;
                 }
                 request.setUsername(user);
-                if(request.getMsgnum().empty()){
+                if (request.getMsgnum().empty()) {
                     sendBuffer(SERV_ERR);
-                    std::cerr << "Error: Msgnum not specified!\n";
+                    std::cerr << m_clientId << ": Error: Msgnum not specified!\n";
                     continue;
                 }
 
-                std::cout << "Read message #" << request.getMsgnum() << " of user " << request.getUsername() << "\n\n";
+                std::cout << m_clientId << ": Read message #" << request.getMsgnum() << " of user "
+                          << request.getUsername() << "\n\n";
                 //opens amd reads requested msg
                 m_fileMutex.lock();
                 readMessage(path, request.getMsgnum());
                 m_fileMutex.unlock();
 
-            } else if(request.getMethod() == CMD_DEL) {
-                if(user.empty()){
+            } else if (request.getMethod() == CMD_DEL) {
+                if (user.empty()) {
                     sendBuffer(SERV_ERR);
-                    std::cerr << "Error: User is not logged in.\n";
+                    std::cerr << m_clientId << ": Error: User is not logged in.\n";
                     continue;
                 }
                 request.setUsername(user);
-                if(request.getMsgnum().empty()){
+                if (request.getMsgnum().empty()) {
                     sendBuffer(SERV_ERR);
-                    std::cerr << "Error: Msgnum not specified!\n";
+                    std::cerr << m_clientId << ": Error: Msgnum not specified!\n";
                     continue;
                 }
-                std::cout << "Delete message #" << request.getMsgnum() << " of user " << request.getUsername() << "\n\n";
+                std::cout << m_clientId << ": Delete message #" << request.getMsgnum() << " of user "
+                          << request.getUsername() << "\n\n";
                 //removes requested msg
                 m_fileMutex.lock();
                 deleteMessage(path, request.getMsgnum());
                 m_fileMutex.unlock();
 
-            } else if(request.getMethod() == CMD_LOGIN){
-                if(request.getUsername().empty()){
+            } else if (request.getMethod() == CMD_LOGIN) {
+                if (request.getUsername().empty()) {
                     sendBuffer(SERV_ERR);
-                    std::cerr << "Error: No username specified!\n";
+                    std::cerr << m_clientId << ": Error: No username specified!\n";
                     continue;
                 }
-                if(request.getPassword().empty()){
+                if (request.getPassword().empty()) {
                     sendBuffer(SERV_ERR);
-                    std::cerr << "Error: No password specified!\n";
+                    std::cerr << m_clientId << ": Error: No password specified!\n";
                 }
-                std::cout << "Trying to log in as user " << request.getUsername() << "\n\n";
+                std::cout << m_clientId << ": Trying to log in as user " << request.getUsername() << "\n\n";
 
                 //sets up ldap connection for logging in
                 Ldap ldap = Ldap(request.getUsername(), request.getPassword());
                 //checks the typed in credentials
                 int userExists = ldap.checkIfUserExists();
 
-                if(userExists == 1){
+                if (userExists == 1) {
                     //user does exist
                     sendBuffer(SERV_OK);
                     user = request.getUsername();
-                } else{
+                } else {
                     sendBuffer(SERV_ERR);
                 }
 
             } else {
-                if(request.getMethod() != CMD_QUIT){
+                if (request.getMethod() != CMD_QUIT) {
                     sendBuffer(SERV_ERR);
 
                 } else {
                     sendBuffer(SERV_OK);
                 }
-                
+
             }
 
-        } while(strcmp(m_receiveBuffer, CMD_QUIT) != 0 && !m_abortRequested);
+        } while (strcmp(m_receiveBuffer, CMD_QUIT) != 0);
 
         abort();
 
@@ -180,14 +184,14 @@ namespace twServer {
 
     void ClientHandler::abort() {
         //releasing resources of the specific connection
-        std::cout << "Bye Bye Client!\n";
+        std::cout << m_clientId << ": Bye Bye Client!\n";
 
-        if(*m_socket != -1) {
-            if(shutdown(*m_socket, SHUT_RDWR) == -1) {
+        if (*m_socket != -1) {
+            if (shutdown(*m_socket, SHUT_RDWR) == -1) {
                 throw std::runtime_error("Nothing to shutdown...");
             }
 
-            if(close(*m_socket) == -1) {
+            if (close(*m_socket) == -1) {
                 throw std::runtime_error("Nothing to close...");
             }
             *m_socket = -1;
@@ -195,8 +199,8 @@ namespace twServer {
     }
 
 
-    bool ClientHandler::sendBuffer(const char* buffer) {
-        if(send(*m_socket, buffer, strlen(buffer), 0) == -1){
+    bool ClientHandler::sendBuffer(const char *buffer) {
+        if (send(*m_socket, buffer, strlen(buffer), 0) == -1) {
             throw std::runtime_error("Sending answer failed.");
         }
         return true;
@@ -208,40 +212,37 @@ namespace twServer {
 
         size = recv(*m_socket, m_receiveBuffer, BUF - 1, 0);
 
-            if (size == -1) {
-                if (m_abortRequested) {
-                    std::cerr << "recv error after aborted\n";
-                } else {
-                    std::cerr << "recv error";
-                }
-                return -1;
-            }
+        if (size == -1) {
+            std::cerr << m_clientId << ": recv error";
 
-            if (size == 0) {
-                std::cerr << "Client closed remote socket\n";
-                return 0;
-            }
+            return -1;
+        }
 
-            //remove newline from client message
-            if(m_receiveBuffer[size - 2] == '\r' && m_receiveBuffer[size -1] == '\n'){
-                size -= 2;
-            } else if(m_receiveBuffer[size - 1] == '\n'){
-                size -= 1;
-            }
+        if (size == 0) {
+            std::cerr << m_clientId << ": Client closed remote socket\n";
+            return 0;
+        }
 
-            //null terminate message
-            m_receiveBuffer[size] = '\0';
+        //remove newline from client message
+        if (m_receiveBuffer[size - 2] == '\r' && m_receiveBuffer[size - 1] == '\n') {
+            size -= 2;
+        } else if (m_receiveBuffer[size - 1] == '\n') {
+            size -= 1;
+        }
 
-            return size;
+        //null terminate message
+        m_receiveBuffer[size] = '\0';
+
+        return size;
     }
 
-    void ClientHandler::saveMessage(Request content, std::string path){
+    void ClientHandler::saveMessage(const Request &content, const std::string &path) {
         std::string ID;
         //if dir does not exist, ID = 1
         //else get next id
-        if(std::filesystem::is_directory(path) && std::filesystem::exists(path)){
-           ID = getNextID(content.getReceiver(), path); 
-        }else{
+        if (std::filesystem::is_directory(path) && std::filesystem::exists(path)) {
+            ID = getNextID(content.getReceiver(), path);
+        } else {
             ID = std::to_string(1);
         }
         //if dir does not exit, creates dir + file
@@ -256,24 +257,23 @@ namespace twServer {
         ofs << "Sender: " << content.getSender() << "\n"
             << "Receiver: " << content.getReceiver() << "\n"
             << "Subject: " << content.getSubject() << "\n"
-            << "Message: \n" << content.getMessage() << "\n"
-        ; 
+            << "Message: \n" << content.getMessage() << "\n";
         //file is closed
         ofs.close();
     }
 
-    std::string ClientHandler::getNextID(std::string user, std::string path){
+    std::string ClientHandler::getNextID(const std::string &user, const std::string &path) {
         std::string filename;
         int highestNr = 1;
         std::vector<int> ids;
-        
+
         //iterates through directory and collects all filenames as ints in vector ids
-        for (const auto & entry : std::filesystem::directory_iterator(path)){
-           filename = entry.path();
-           filename.erase(0, path.size()+1);
-           ids.push_back(stoi(filename));
+        for (const auto &entry: std::filesystem::directory_iterator(path)) {
+            filename = entry.path();
+            filename.erase(0, path.size() + 1);
+            ids.push_back(stoi(filename));
         }
-        if(ids.size() == 0){
+        if (ids.empty()) {
             //if there are no messages, return ID 1
             return std::to_string(1);
         }
@@ -281,7 +281,7 @@ namespace twServer {
         std::sort(ids.begin(), ids.end());
 
         //get new hightest id by looking at last int in ids and increment it
-        highestNr = ids.at(ids.size()-1) + 1;
+        highestNr = ids.at(ids.size() - 1) + 1;
         //return it as string for easier usage
         std::string newID = std::to_string(highestNr);
 
@@ -289,24 +289,24 @@ namespace twServer {
     }
 
 
-    void ClientHandler::listMessages(std::string path){
+    void ClientHandler::listMessages(const std::string &path) {
         std::string filename;
-        std::string response = "";
+        std::string response;
         size_t size = response.size();
-        int cnt = 0; 
+        int cnt = 0;
         //open directory and iterate through
-        if(std::filesystem::is_directory(path) && std::filesystem::exists(path)){
-            for (const auto & entry : std::filesystem::directory_iterator(path)){
+        if (std::filesystem::is_directory(path) && std::filesystem::exists(path)) {
+            for (const auto &entry: std::filesystem::directory_iterator(path)) {
                 filename = entry.path();
                 std::string temp;
                 //open file
                 std::ifstream readFile(filename);
                 //read every line until subject
-                while(!readFile.eof()){
-                    while(getline(readFile, temp)){
+                while (!readFile.eof()) {
+                    while (getline(readFile, temp)) {
                         //if Subject is found
-                       if(temp.find("Subject") != std::string::npos){
-                            filename.erase(0, path.size()+1);
+                        if (temp.find("Subject") != std::string::npos) {
+                            filename.erase(0, path.size() + 1);
                             //add subject + filename to response
                             response += temp + '\n';
                             response += " - MsgNr: " + filename + '\n';
@@ -321,84 +321,84 @@ namespace twServer {
         //add counter of responsed to start of string
         response = std::to_string(cnt) + "\n" + response;
 
-        if(response.size() > size){
-            //send collected response to client 
+        if (response.size() > size) {
+            //send collected response to client
             sendBuffer(response.c_str());
-        }else{
+        } else {
             //if no msg in path, send 0
             sendBuffer("0");
         }
     }
 
-    void ClientHandler::readMessage(std::string path, std::string msgNum){
+    void ClientHandler::readMessage(const std::string &path, const std::string &msgNum) {
         int num = stoi(msgNum);
-        std::string temp_filename = "";
-        std::string m_filename = "";
+        std::string temp_filename;
+        std::string m_filename;
         std::string content = "Message: \n";
 
         //open directory and iterate through
-        if(std::filesystem::is_directory(path) && std::filesystem::exists(path)){
-            for (const auto & entry : std::filesystem::directory_iterator(path)){
+        if (std::filesystem::is_directory(path) && std::filesystem::exists(path)) {
+            for (const auto &entry: std::filesystem::directory_iterator(path)) {
                 temp_filename = entry.path();
                 //get filename without path information for comparison with given filename
-                temp_filename.erase(0, path.size()+1);
-                if(stoi(temp_filename) == num){
-                    std::cout << "Message found\n";
+                temp_filename.erase(0, path.size() + 1);
+                if (stoi(temp_filename) == num) {
+                    std::cout << m_clientId << ": Message found\n";
                     m_filename = temp_filename;
                     break;
                 }
             }
         }
         //if file has been found
-        if(m_filename.size() > 0){
+        if (!m_filename.empty()) {
             std::string temp;
             //open file
             std::ifstream readFile(path + "/" + m_filename);
             //read every line until end of file
-            while(!readFile.eof()){
-                while(getline(readFile, temp)){
+            while (!readFile.eof()) {
+                while (getline(readFile, temp)) {
                     content += '\n' + temp;
                 }
             }
             readFile.close();
-            
+
             content = SERV_OK + '\n' + content;
             //send content of founf msg + OK to client
             sendBuffer(content.c_str());
-        }else{
+        } else {
             //if file has not been found
             sendBuffer(SERV_ERR);
-        }  
+        }
     }
 
-    void ClientHandler::deleteMessage(std::string path, std::string msgNum){
+    void ClientHandler::deleteMessage(const std::string &path, const std::string &msgNum) {
         int num = stoi(msgNum);
-        std::string temp_filename = "";
-        std::string m_filename = "";
+        std::string temp_filename;
+        std::string m_filename;
 
         //similar mechanic to read
-        if(std::filesystem::is_directory(path) && std::filesystem::exists(path)){
-            for (const auto & entry : std::filesystem::directory_iterator(path)){
+        if (std::filesystem::is_directory(path) && std::filesystem::exists(path)) {
+            for (const auto &entry: std::filesystem::directory_iterator(path)) {
                 temp_filename = entry.path();
-                temp_filename.erase(0, path.size()+1);
-                if(stoi(temp_filename) == num){
-                    std::cout << "Message found\n";
+                temp_filename.erase(0, path.size() + 1);
+                if (stoi(temp_filename) == num) {
+                    std::cout << m_clientId << ": Message found\n";
                     m_filename = temp_filename;
                     break;
                 }
             }
         }
         //if file has been found
-        if(m_filename.size() > 0){
+        if (!m_filename.empty()) {
             //get complete path of file and remove it
-            const char* filepath = (path + "/" + m_filename).c_str();
-            if(remove(filepath) != 0){
+            const char *filepath = (path + "/" + m_filename).c_str();
+            if (remove(filepath) != 0) {
                 std::cerr << "Error deleting message\n";
                 sendBuffer(SERV_ERR);
                 return;
             }
             sendBuffer(SERV_OK);
-        }else{
+        } else {
             //if file has not been found
             sendBuffer(SERV_ERR);
         }

@@ -33,13 +33,15 @@ namespace twClient {
         std::cout << "Client setup successful!\n";
     }
 
-    Client::~Client() {}
+    Client::~Client() = default;
 
     void Client::start() {
 
         // Connect to server socket
         if (connect(m_socket, (struct sockaddr *) &m_address, sizeof(m_address)) == -1) {
-            std::string msg = "Connect error - no server available at " + std::string(inet_ntoa(m_address.sin_addr)) + ":" + std::to_string(ntohs(m_address.sin_port));
+            std::string msg =
+                    "Connect error - no server available at " + std::string(inet_ntoa(m_address.sin_addr)) + ":" +
+                    std::to_string(ntohs(m_address.sin_port));
             throw std::runtime_error(msg);
         }
 
@@ -62,26 +64,26 @@ namespace twClient {
             std::getline(std::cin, command);
 
             //arraging message to be sent to server depending on command
-            if(command == CMD_LOGIN){
+            if (command == CMD_LOGIN) {
                 message = command + "\n" + handleLogin();
 
-            }else if(command == CMD_SEND){
+            } else if (command == CMD_SEND) {
                 message = command + "\n" + handleSend();
-            
-            } else if(command == CMD_READ) {
+
+            } else if (command == CMD_READ) {
                 message = command + "\n" + handleRead();
 
-            } else if(command == CMD_LIST) {
+            } else if (command == CMD_LIST) {
                 message = command;
 
-            } else if(command == CMD_DEL) {
+            } else if (command == CMD_DEL) {
                 message = command + "\n" + handleDel();
 
-            } else if(command == CMD_QUIT) {
+            } else if (command == CMD_QUIT) {
                 message = command + "\n";
-                isQuit = true; 
+                isQuit = true;
             } //print help menu for question or help command
-            else if(command == "?" || command == "HELP") {
+            else if (command == "?" || command == "HELP") {
                 std::cout << "Available commands:\n"
                           << "LOGIN - login with username and password\n"
                           << "HELP - display this list\n"
@@ -91,21 +93,19 @@ namespace twClient {
                           << "READ - read a mail from a users mailbox\n"
                           << "LIST - list a users mailbox items\n"
                           << "DEL - delete a mail\n";
-                          
+
                 continue;
             } //unknown command
             else {
                 std::cout << "Invalid command. Type '?' for help.\n";
                 continue;
             }
-            
+
 
             if (!message.empty() && message != "\n") {
                 if (!sendBuffer(message.c_str())) {
                     throw std::runtime_error("Send failed, abort...");
-                }   
-                //shows client what exactely was sent to server
-                std::cout << "Message sent! Message:\n-----\n" << message << "\n-----\n";
+                }
                 //deletes message for next use
                 message.clear();
                 //waits on server reaction
@@ -120,19 +120,19 @@ namespace twClient {
 
     }
 
-    std::string Client::handleLogin(){
+    std::string Client::handleLogin() {
         std::string username;
         std::string password;
 
-        while(username.empty()){
-            std::cout << "USERNAME: ";
+        while (username.empty()) {
+            std::cout << "USERNAME >> ";
             std::getline(std::cin, username);
         }
         //special function for getting password to hide while typing
         password = getpass();
 
         return username + "\n" + password;
-        
+
     }
 
     std::string Client::handleSend() {
@@ -141,7 +141,7 @@ namespace twClient {
         std::string message;
 
         //get all necessary parameters for sending a message
-        while(receiver.empty()){
+        while (receiver.empty()) {
             std::cout << "RECEIVER >> ";
             std::getline(std::cin, receiver);
         }
@@ -150,9 +150,9 @@ namespace twClient {
         std::getline(std::cin, subject);
 
         std::cout << "MESSAGE (end with dot + newline)\n>> ";
-        
+
         std::string line;
-        
+
         //reads message until . newline
         do {
             std::getline(std::cin, line);
@@ -171,7 +171,7 @@ namespace twClient {
 
         std::cout << "MSGNR >> ";
         std::getline(std::cin, msgnr);
-        
+
         return msgnr + "\n";
     }
 
@@ -184,17 +184,17 @@ namespace twClient {
         return msgnr + "\n";
     }
 
-    int Client::getch(){
+    int Client::getch() {
         int ch;
         struct termios t_old, t_new;
 
         // tcgetattr() gets the parameters associated with the object referred by fd and stores them in the termios structure referenced by termios_p
         tcgetattr(STDIN_FILENO, &t_old);
-        
+
         // copy old to new to have a base for setting c_lflags
         t_new = t_old;
         t_new.c_lflag &= ~(ICANON | ECHO);
-        
+
         // sets the attributes
         tcsetattr(STDIN_FILENO, TCSANOW, &t_new);
 
@@ -206,7 +206,7 @@ namespace twClient {
         return ch;
     }
 
-    std::string Client::getpass(){
+    std::string Client::getpass() {
         int show_asterisk = 1;
 
         const char BACKSPACE = 127;
@@ -217,17 +217,17 @@ namespace twClient {
 
         std::cout << "PASSWORD >> ";
 
-        while ((ch = getch()) != RETURN){
-            if (ch == BACKSPACE){
-                if (password.length() != 0){
-                    if (show_asterisk){
+        while ((ch = getch()) != RETURN) {
+            if (ch == BACKSPACE) {
+                if (password.length() != 0) {
+                    if (show_asterisk) {
                         printf("\b \b"); // backslash: \b
                     }
                     password.resize(password.length() - 1);
                 }
-            }else {
+            } else {
                 password += ch;
-                if (show_asterisk){
+                if (show_asterisk) {
                     printf("*");
                 }
             }

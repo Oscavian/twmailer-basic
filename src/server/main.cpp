@@ -1,18 +1,17 @@
 #include <iostream>
 #include "header/Server.hpp"
-#include <signal.h>
+#include <csignal>
 
 twServer::Server server;
 
 void signalHandler(int sig) {
     std::cout << "SIGINT caught! Aborting...\n";
     server.requestAbort();
-
-    exit(sig); //todo: handle better
+    exit(sig);
 }
 
 
-int main(int argc, char** argv){
+int main(int argc, char **argv) {
 
     (void) signal(SIGINT, signalHandler);
 
@@ -33,7 +32,7 @@ int main(int argc, char** argv){
         std::cerr << "Error: Invalid program usage.\n";
         std::cerr << "Usage: " << args[0] << " <port> <mailSpoolDirectory>\n";
         return EXIT_FAILURE;
-    }    
+    }
 
     server.setMailDir(mailDir);
     server.setPort(port);

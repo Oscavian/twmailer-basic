@@ -13,40 +13,50 @@
 
 #include "../../share/ClientBase.h"
 
-namespace twServer{
+namespace twServer {
 
-    class Ldap{
+    class Ldap {
 
-        public:
-            Ldap(std::string username, std::string password);
-            ~Ldap();
+    public:
+        Ldap(std::string username, std::string password);
 
-            char ldapBindUser[256]; 
-            char ldapBindPassword[256];
-        
-            //mostly getters for important ldap parameters
-            std::string getUsername() const {return m_username; };
-            std::string getPassword() const {return m_password; };
-            const char* getLdapURL() const {return ldapURL; };
-            const int getLdapVersion() const {return ldapVersion; };
-            const char* getLdapSearchBase() const {return ldapSearchBaseDomainComponent; };
-            const char* getLdapSearchFilter() const {return ldapSearchFilter; };
-            void setLdapSearchFilter(const char* filter) {ldapSearchFilter = filter; };
-            ber_int_t getLdapSearchScope() const {return ldapSearchScope; };
-            void printSearchResult(LDAP *ldapHandle, LDAPMessage *searchResult);
-            int checkIfUserExists();
+        ~Ldap();
 
-        private:
+        char ldapBindUser[256];
+        char ldapBindPassword[256];
 
-            //important ldap parameters
-            const char *ldapURL = "ldap://ldap.technikum-wien.at:389";
-            const int ldapVersion = LDAP_VERSION3;
-            const char *ldapSearchBaseDomainComponent = "dc=technikum-wien,dc=at";
-            const char *ldapSearchFilter;
-            ber_int_t ldapSearchScope = LDAP_SCOPE_SUBTREE;
-            
-            std::string m_username;
-            std::string m_password;
+        //mostly getters for important ldap parameters
+        std::string getUsername() const { return m_username; };
+
+        std::string getPassword() const { return m_password; };
+
+        const char *getLdapURL() const { return ldapURL; };
+
+        const int getLdapVersion() const { return ldapVersion; };
+
+        const char *getLdapSearchBase() const { return ldapSearchBaseDomainComponent; };
+
+        const char *getLdapSearchFilter() const { return ldapSearchFilter; };
+
+        void setLdapSearchFilter(const char *filter) { ldapSearchFilter = filter; };
+
+        ber_int_t getLdapSearchScope() const { return ldapSearchScope; };
+
+        void printSearchResult(LDAP *ldapHandle, LDAPMessage *searchResult);
+
+        int checkIfUserExists();
+
+    private:
+
+        //important ldap parameters
+        const char *ldapURL = "ldap://ldap.technikum-wien.at:389";
+        const int ldapVersion = LDAP_VERSION3;
+        const char *ldapSearchBaseDomainComponent = "dc=technikum-wien,dc=at";
+        const char *ldapSearchFilter;
+        ber_int_t ldapSearchScope = LDAP_SCOPE_SUBTREE;
+
+        std::string m_username;
+        std::string m_password;
 
     };
 }

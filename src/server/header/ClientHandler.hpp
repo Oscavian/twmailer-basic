@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <cstring>
+#include <mutex>
 #include "Request.hpp"
 #include "Ldap.hpp"
 
@@ -42,6 +43,8 @@ namespace twServer {
             void deleteMessage(std::string path, std::string msgNum);
             bool loginUser(std::string username, std::string password);
             void abort();
+
+            static std::mutex m_fileMutex;
 
         private:
             int *m_socket;

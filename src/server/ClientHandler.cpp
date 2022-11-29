@@ -71,7 +71,9 @@ namespace twServer {
                 //save msg in doc
                 try {
                     path = m_mailDir + "/" + request.getReceiver();
+                    m_fileMutex.lock();
                     saveMessage(request, path);
+                    m_fileMutex.unlock();
                 } catch(std::filesystem::filesystem_error & e){
                     std::cerr << e.what() << std::endl;
                 }
@@ -94,7 +96,9 @@ namespace twServer {
 
                 std::cout << "List messages of user " << request.getUsername() << "\n\n";
                 //sends list of message-subjects + numbers
+                m_fileMutex.lock();
                 listMessages(path);
+                m_fileMutex.unlock();
 
             } else if(request.getMethod() == CMD_READ){
                 if(user.empty()){
@@ -111,7 +115,9 @@ namespace twServer {
 
                 std::cout << "Read message #" << request.getMsgnum() << " of user " << request.getUsername() << "\n\n";
                 //opens amd reads requested msg
+                m_fileMutex.lock();
                 readMessage(path, request.getMsgnum());
+                m_fileMutex.unlock();
 
             } else if(request.getMethod() == CMD_DEL) {
                 if(user.empty()){
@@ -127,7 +133,9 @@ namespace twServer {
                 }
                 std::cout << "Delete message #" << request.getMsgnum() << " of user " << request.getUsername() << "\n\n";
                 //removes requested msg
+                m_fileMutex.lock();
                 deleteMessage(path, request.getMsgnum());
+                m_fileMutex.unlock();
 
             } else if(request.getMethod() == CMD_LOGIN){
                 if(request.getUsername().empty()){
